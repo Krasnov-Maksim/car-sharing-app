@@ -1,4 +1,4 @@
-package mate.academy.carsharing.dto;
+package mate.academy.carsharing.dto.car;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.PositiveOrZero;

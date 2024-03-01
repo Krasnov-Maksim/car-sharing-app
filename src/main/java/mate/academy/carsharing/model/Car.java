@@ -16,9 +16,9 @@ import org.hibernate.annotations.SQLRestriction;
 
 @Entity
 @Table(name = "cars")
-@SQLDelete(sql = "UPDATE cars SET deleted = true WHERE id = ?")
+@SQLDelete(sql = "UPDATE cars SET is_deleted = true WHERE id = ?")
 @NoArgsConstructor
-@SQLRestriction("deleted = false")
+@SQLRestriction("is_deleted = false")
 @Data
 public class Car {
     @Id
@@ -35,8 +35,8 @@ public class Car {
     private Integer inventory;
     @Column(name = "daily_fee", nullable = false)
     private BigDecimal dailyFee;
-    @Column(nullable = false)
-    private boolean deleted = false;
+    @Column(name = "is_deleted", nullable = false)
+    private boolean isDeleted = false;
 
     public enum Type {
         SEDAN,

@@ -2,8 +2,8 @@ package mate.academy.carsharing.service.impl;
 
 import java.util.List;
 import lombok.RequiredArgsConstructor;
-import mate.academy.carsharing.dto.CarResponseDto;
-import mate.academy.carsharing.dto.CreateCarRequestDto;
+import mate.academy.carsharing.dto.car.CarResponseDto;
+import mate.academy.carsharing.dto.car.CreateCarRequestDto;
 import mate.academy.carsharing.exception.EntityNotFoundException;
 import mate.academy.carsharing.mapper.CarMapper;
 import mate.academy.carsharing.model.Car;

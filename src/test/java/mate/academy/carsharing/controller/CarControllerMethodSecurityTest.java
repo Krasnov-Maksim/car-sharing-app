@@ -11,8 +11,7 @@ import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.SQLException;
 import javax.sql.DataSource;
-import lombok.SneakyThrows;
-import mate.academy.carsharing.dto.CreateCarRequestDto;
+import mate.academy.carsharing.dto.car.CreateCarRequestDto;
 import mate.academy.carsharing.model.Car;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -24,6 +23,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.http.MediaType;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.init.ScriptUtils;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
@@ -57,9 +57,11 @@ class CarControllerMethodSecurityTest {
     private ObjectMapper objectMapper;
     @Autowired
     private DataSource dataSource;
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
 
     @BeforeEach
-    public void beforeEach() {
+    public void beforeEach() throws SQLException {
         setupDatabase(dataSource);
     }
 
@@ -78,8 +80,7 @@ class CarControllerMethodSecurityTest {
         }
     }
 
-    @SneakyThrows
-    private void setupDatabase(DataSource dataSource) {
+    private void setupDatabase(DataSource dataSource) throws SQLException {
         try (Connection connection = dataSource.getConnection()) {
             connection.setAutoCommit(true);
             ScriptUtils.executeSqlScript(
@@ -90,8 +91,8 @@ class CarControllerMethodSecurityTest {
     }
 
     @Test
-    @DisplayName("User with role 'Admin' can create new car")
-    @WithMockUser(roles = {"ADMIN"})
+    @DisplayName("User with role 'Manager' can create new car")
+    @WithMockUser(roles = {"MANAGER"})
     void create_WithRoleAdmin_ThenSuccess() throws Exception {
         String jsonRequest = objectMapper.writeValueAsString(CREATE_BMV_X5_REQUEST_DTO);
         mockMvc.perform(post("/api/cars")
@@ -103,8 +104,8 @@ class CarControllerMethodSecurityTest {
     }
 
     @Test
-    @DisplayName("User without role 'Admin' can't create new car")
-    @WithMockUser(roles = {"NOT_ADMIN"})
+    @DisplayName("User without role 'Manager' can't create new car")
+    @WithMockUser(roles = {"NOT_MANAGER"})
     void create_WithInvalidRole_ThenError() throws Exception {
         String jsonRequest = objectMapper.writeValueAsString(CREATE_BMV_X5_REQUEST_DTO);
         mockMvc.perform(post("/api/cars")
@@ -116,29 +117,32 @@ class CarControllerMethodSecurityTest {
     }
 
     @Test
-    @DisplayName("User with role 'Admin' can delete car")
-    @WithMockUser(roles = {"ADMIN"})
+    @DisplayName("User with role 'Manager' can delete car")
+    @WithMockUser(roles = {"MANAGER"})
     void deleteById_WithRoleAdmin_ThenSuccess() throws Exception {
-        mockMvc.perform(delete("/api/cars/{id}", 100))
+        Long carId = getLastCarId();
+        mockMvc.perform(delete("/api/cars/{id}", carId))
                 .andExpect(status().isNoContent())
                 .andReturn();
     }
 
     @Test
-    @DisplayName("User without role 'Admin' can't delete car")
-    @WithMockUser(roles = {"NOT_ADMIN"})
+    @DisplayName("User without role 'Manager' can't delete car")
+    @WithMockUser(roles = {"NOT_MANAGER"})
     void deleteById_InvalidRole_ThenError() throws Exception {
-        mockMvc.perform(delete("/api/cars/{id}", 100))
+        Long carId = getLastCarId();
+        mockMvc.perform(delete("/api/cars/{id}", carId))
                 .andExpect(MockMvcResultMatchers.status().isForbidden())
                 .andReturn();
     }
 
     @Test
-    @DisplayName("User with role 'Admin' can update car")
-    @WithMockUser(roles = {"ADMIN"})
+    @DisplayName("User with role 'Manager' can update car")
+    @WithMockUser(roles = {"MANAGER"})
     void updateById_WithRoleAdmin_ThenSuccess() throws Exception {
+        Long carId = getLastCarId();
         String jsonRequest = objectMapper.writeValueAsString(CREATE_AUDI_Q7_REQUEST_DTO);
-        mockMvc.perform(put("/api/cars/{id}", 1)
+        mockMvc.perform(put("/api/cars/{id}", carId)
                         .content(jsonRequest)
                         .contentType(MediaType.APPLICATION_JSON)
                 )
@@ -147,11 +151,12 @@ class CarControllerMethodSecurityTest {
     }
 
     @Test
-    @DisplayName("User without role 'Admin' can't update car")
-    @WithMockUser(roles = {"NOT_ADMIN"})
+    @DisplayName("User without role 'Manager' can't update car")
+    @WithMockUser(roles = {"NOT_MANAGER"})
     void updateById_InvalidRole_ThenError() throws Exception {
+        Long carId = getLastCarId();
         String jsonRequest = objectMapper.writeValueAsString(CREATE_AUDI_Q7_REQUEST_DTO);
-        mockMvc.perform(put("/api/cars/{id}", 1)
+        mockMvc.perform(put("/api/cars/{id}", carId)
                         .content(jsonRequest)
                         .contentType(MediaType.APPLICATION_JSON)
                 )
@@ -172,8 +177,9 @@ class CarControllerMethodSecurityTest {
     @DisplayName("Anonymous user without any role can get info about any cars")
     @WithMockUser(roles = {"ANONYMOUS"})
     void getById_WithOneOfRoleAdminUserAnonymous_ThenSuccess() throws Exception {
+        Long carId = getLastCarId();
         String jsonRequest = objectMapper.writeValueAsString(CREATE_AUDI_Q7_REQUEST_DTO);
-        mockMvc.perform(get("/api/cars/{id}", 1)
+        mockMvc.perform(get("/api/cars/{id}", carId)
                         .content(jsonRequest)
                         .contentType(MediaType.APPLICATION_JSON)
                 )
@@ -181,4 +187,7 @@ class CarControllerMethodSecurityTest {
                 .andReturn();
     }
 
+    private Long getLastCarId() {
+        return jdbcTemplate.queryForObject("SELECT MAX(id) FROM cars", Long.class);
+    }
 }

@@ -6,8 +6,8 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
-import mate.academy.carsharing.dto.CarResponseDto;
-import mate.academy.carsharing.dto.CreateCarRequestDto;
+import mate.academy.carsharing.dto.car.CarResponseDto;
+import mate.academy.carsharing.dto.car.CreateCarRequestDto;
 import mate.academy.carsharing.service.CarService;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -30,7 +30,7 @@ public class CarController {
     private final CarService carService;
 
     @ResponseStatus(HttpStatus.CREATED)
-    @PreAuthorize("hasRole('ROLE_ADMIN')")
+    @PreAuthorize("hasRole('ROLE_MANAGER')")
     @Operation(summary = "Create a new car", description = "Create a new car")
     @PostMapping
     public CarResponseDto create(@RequestBody @Valid CreateCarRequestDto carDto) {
@@ -38,7 +38,7 @@ public class CarController {
     }
 
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    @PreAuthorize("hasRole('ROLE_ADMIN')")
+    @PreAuthorize("hasRole('ROLE_MANAGER')")
     @Operation(summary = "Delete a car by id", description = "Delete car with specified id")
     @DeleteMapping("/{id}")
     public void deleteById(@PathVariable Long id) {
@@ -46,7 +46,7 @@ public class CarController {
     }
 
     @ResponseStatus(HttpStatus.OK)
-    @PreAuthorize("hasRole('ROLE_ADMIN')")
+    @PreAuthorize("hasRole('ROLE_MANAGER')")
     @Operation(summary = "Update a car by id", description = "Update car with specified id")
     @PutMapping("/{id}")
     public CarResponseDto updateById(@PathVariable Long id,
@@ -55,7 +55,7 @@ public class CarController {
     }
 
     @ResponseStatus(HttpStatus.OK)
-    @PreAuthorize("hasAnyRole('ROLE_ADMIN', 'ROLE_USER', 'ROLE_ANONYMOUS')")
+    @PreAuthorize("hasAnyRole('ROLE_MANAGER', 'ROLE_CUSTOMER', 'ROLE_ANONYMOUS')")
     @Operation(summary = "Get a car by id", description = "Get a car with specified id")
     @GetMapping("/{id}")
     public CarResponseDto getById(@PathVariable Long id) {
