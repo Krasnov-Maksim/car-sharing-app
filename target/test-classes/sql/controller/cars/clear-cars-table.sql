@@ -1,5 +1,0 @@
-DELETE
-FROM cars;
-# for MySql
-ALTER TABLE cars
-    AUTO_INCREMENT = 0;
