@@ -1,0 +1,17 @@
+databaseChangeLog:
+  - changeSet:
+      id: fill-roles-table
+      author: Krasnov-Maksim
+      changes:
+        - insert:
+            tableName: roles
+            columns:
+              - column:
+                  name: name
+                  value: "ROLE_MANAGER"
+        - insert:
+            tableName: roles
+            columns:
+              - column:
+                  name: name
+                  value: "ROLE_CUSTOMER"

@@ -1,10 +1,10 @@
 databaseChangeLog:
   - changeSet:
-      id: create-users-table
+      id: create-roles-table
       author: Krasnov-Maksim
       changes:
         - createTable:
-            tableName: users
+            tableName: roles
             columns:
               - column:
                   name: id
@@ -14,8 +14,8 @@ databaseChangeLog:
                     primaryKey: true
                     nullable: false
               - column:
-                  name: email
-                  type: varchar(255)
+                  name: name
+                  type: "ENUM('ROLE_MANAGER', 'ROLE_CUSTOMER')"
                   constraints:
                     nullable: false
                     unique: true
