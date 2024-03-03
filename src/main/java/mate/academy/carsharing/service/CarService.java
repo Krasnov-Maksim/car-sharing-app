@@ -1,8 +1,8 @@
 package mate.academy.carsharing.service;
 
 import java.util.List;
-import mate.academy.carsharing.dto.CarResponseDto;
-import mate.academy.carsharing.dto.CreateCarRequestDto;
+import mate.academy.carsharing.dto.car.CarResponseDto;
+import mate.academy.carsharing.dto.car.CreateCarRequestDto;
 import org.springframework.data.domain.Pageable;
 
 public interface CarService {

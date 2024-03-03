@@ -1,4 +1,4 @@
-package mate.academy.carsharing.dto;
+package mate.academy.carsharing.dto.car;
 
 import java.math.BigDecimal;
 import lombok.Data;
