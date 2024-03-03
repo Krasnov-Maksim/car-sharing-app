@@ -138,7 +138,7 @@ class CarControllerMethodSecurityTest {
 
     @Test
     @DisplayName("User with role 'Manager' can update car")
-    @WithMockUser(roles = {"MANAGER"})
+    @WithMockUser(roles = {"MANAGER"}, username = "manager@mail.com")
     void updateById_WithRoleAdmin_ThenSuccess() throws Exception {
         Long carId = getLastCarId();
         String jsonRequest = objectMapper.writeValueAsString(CREATE_AUDI_Q7_REQUEST_DTO);

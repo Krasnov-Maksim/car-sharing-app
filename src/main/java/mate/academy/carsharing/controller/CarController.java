@@ -50,7 +50,7 @@ public class CarController {
     @Operation(summary = "Update a car by id", description = "Update car with specified id")
     @PutMapping("/{id}")
     public CarResponseDto updateById(@PathVariable Long id,
-                                     @RequestBody @Valid CreateCarRequestDto requestDto) {
+            @RequestBody @Valid CreateCarRequestDto requestDto) {
         return carService.updateById(id, requestDto);
     }
 

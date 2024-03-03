@@ -37,9 +37,6 @@ public class SecurityConfig {
                         // list cars.
                         .requestMatchers(HttpMethod.GET, "api/cars", "api/cars/{id}")
                         .permitAll()
-                        // FIXME: regexMatcher
-                        //.requestMatchers(regexMatcher(HttpMethod.GET, "api\\/cars\\?.*"))
-                        //.permitAll()
                         .requestMatchers("api/auth/**", "/swagger-ui/**", "/v3/api-docs/**")
                         .permitAll()
                         .anyRequest()

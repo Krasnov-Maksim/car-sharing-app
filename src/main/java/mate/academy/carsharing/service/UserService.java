@@ -9,6 +9,6 @@ public interface UserService {
     UserResponseDto register(UserRegistrationRequestDto requestDto);
 
     UserResponseDtoWithRoles updateUserRole(String userEmail,
-                                            UserUpdateRoleRequestDto userUpdateRoleRequestDto);
+            UserUpdateRoleRequestDto userUpdateRoleRequestDto);
 
 }
