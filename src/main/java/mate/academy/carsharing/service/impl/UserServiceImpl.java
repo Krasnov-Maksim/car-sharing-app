@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import mate.academy.carsharing.dto.user.UserRegistrationRequestDto;
 import mate.academy.carsharing.dto.user.UserResponseDto;
 import mate.academy.carsharing.dto.user.UserResponseDtoWithRoles;
+import mate.academy.carsharing.dto.user.UserUpdateInfoRequestDto;
 import mate.academy.carsharing.dto.user.UserUpdateRoleRequestDto;
 import mate.academy.carsharing.exception.EntityNotFoundException;
 import mate.academy.carsharing.exception.RegistrationException;
@@ -40,17 +41,37 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public UserResponseDtoWithRoles updateUserRole(String userEmail,
+    public UserResponseDtoWithRoles updateUserRole(Long id,
             UserUpdateRoleRequestDto userUpdateRoleRequestDto) {
-        User user = getUserByEmail(userEmail);
+        User user = getUserById(id);
         Role roleToAdd = getRoleByRoleName(userUpdateRoleRequestDto.role().getName());
-        user.getRoles().add(roleToAdd);
-        return userMapper.toDtoWithRoles(userRepository.save(user));
+        if (user.getRoles().add(roleToAdd)) {
+            user = userRepository.save(user);
+        }
+        return userMapper.toDtoWithRoles(user);
+    }
+
+    @Override
+    public UserResponseDto updateUserInfo(String email, UserUpdateInfoRequestDto requestDto) {
+        User user = getUserByEmail(email);
+        user.setFirstName(requestDto.firstName());
+        user.setLastName(requestDto.lastName());
+        return userMapper.toDto(userRepository.save(user));
+    }
+
+    @Override
+    public UserResponseDtoWithRoles getUserInfo(String email) {
+        return userMapper.toDtoWithRoles(getUserByEmail(email));
     }
 
     private User getUserByEmail(String email) {
         return userRepository.findByEmail(email).orElseThrow(
                 () -> new EntityNotFoundException("Can't find user by email: " + email));
+    }
+
+    private User getUserById(Long id) {
+        return userRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Can't find user with id: " + id));
     }
 
     private Role getRoleByRoleName(Role.RoleName roleName) {

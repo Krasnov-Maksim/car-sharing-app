@@ -23,8 +23,8 @@ import org.springframework.security.core.userdetails.UserDetails;
 
 @Data
 @NoArgsConstructor
-@SQLDelete(sql = "UPDATE users SET is_deleted = true WHERE id = ?")
-@SQLRestriction("is_deleted = false")
+@SQLDelete(sql = "UPDATE users SET deleted = true WHERE id = ?")
+@SQLRestriction("deleted = false")
 @Table(name = "users")
 @Entity
 public class User implements UserDetails {
@@ -47,8 +47,8 @@ public class User implements UserDetails {
             inverseJoinColumns = @JoinColumn(name = "role_id")
     )
     private Set<Role> roles = new HashSet<>();
-    @Column(name = "is_deleted", nullable = false)
-    private boolean isDeleted = false;
+    @Column(name = "deleted", nullable = false)
+    private boolean deleted = false;
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
@@ -77,6 +77,6 @@ public class User implements UserDetails {
 
     @Override
     public boolean isEnabled() {
-        return !isDeleted;
+        return !deleted;
     }
 }
