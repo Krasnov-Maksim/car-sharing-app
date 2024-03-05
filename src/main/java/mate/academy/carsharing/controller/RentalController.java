@@ -3,6 +3,7 @@ package mate.academy.carsharing.controller;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import mate.academy.carsharing.dto.rental.CreateRentalRequestDto;
 import mate.academy.carsharing.dto.rental.RentalResponseDto;
@@ -27,16 +28,26 @@ public class RentalController {
 
     @ResponseStatus(HttpStatus.CREATED)
     @PreAuthorize("hasRole('ROLE_MANAGER')")
+    @Operation(summary = "Create a new rental", description = "Manager creates a new rental")
     @PostMapping()
-    @Operation(summary = "Create a new rental", description = "Create a new rental")
     public RentalResponseDto create(@RequestBody @Valid CreateRentalRequestDto requestDto) {
         return rentalService.save(requestDto);
     }
 
     @ResponseStatus(HttpStatus.OK)
+    @PreAuthorize("hasRole('ROLE_MANAGER')")
+    @Operation(summary = "Get list of rentals",
+            description = "Get list of rentals for specified user and specified rental state")
+    @GetMapping("/{userId}/{isActive}")
+    public List<RentalResponseDto> getRentalsByUserIdAndRentalState(@PathVariable Long userId,
+            @PathVariable boolean isActive) {
+        return rentalService.getRentalsByUserIdAndRentalState(userId, isActive);
+    }
+
+    @ResponseStatus(HttpStatus.OK)
     @PreAuthorize("hasRole('ROLE_CUSTOMER')")
+    @Operation(summary = "Get rental info by id", description = "Get rental info by id")
     @GetMapping("/{id}")
-    @Operation(summary = "Get rental by id", description = "Get rental by id")
     public RentalResponseDto getRental(@PathVariable Long id, Authentication authentication) {
         return rentalService.getRentalById(id, authentication.getName());
     }

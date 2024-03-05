@@ -5,11 +5,18 @@ import mate.academy.carsharing.dto.rental.CreateRentalRequestDto;
 import mate.academy.carsharing.dto.rental.RentalResponseDto;
 import mate.academy.carsharing.model.Rental;
 import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
 
 @Mapper(config = MapperConfig.class)
 public interface RentalMapper {
 
+    @Mapping(target = "carId", source = "car.id")
+    @Mapping(target = "userId", source = "user.id")
     RentalResponseDto toDto(Rental rental);
 
+    //@Mapping(target = "car", ignore = true)
+    //@Mapping(target = "user", ignore = true)
+    @Mapping(target = "user.id", source = "userId")
+    @Mapping(target = "car.id", source = "carId")
     Rental toModel(CreateRentalRequestDto requestDto);
 }

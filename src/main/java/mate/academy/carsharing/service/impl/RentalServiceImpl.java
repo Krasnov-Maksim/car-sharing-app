@@ -19,6 +19,8 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 @Service
 public class RentalServiceImpl implements RentalService {
+    private static final Integer MIN_REQUIRED_CAR_AVAILABLE = 1;
+
     private final RentalRepository rentalRepository;
     private final UserRepository userRepository;
     private final CarRepository carRepository;
@@ -28,16 +30,30 @@ public class RentalServiceImpl implements RentalService {
     @Transactional
     public RentalResponseDto save(CreateRentalRequestDto requestDto) {
         Car car = getCarById(requestDto.carId());
-        car.setInventory(car.getInventory() - 1);
-        carRepository.save(car);
+        int inventory = car.getInventory();
+        if (inventory < MIN_REQUIRED_CAR_AVAILABLE) {
+            // FIXME: ERROR not enough cars available !!!
+        }
+        car.setInventory(inventory - 1);
+        car = carRepository.save(car);
         Rental newRental = rentalMapper.toModel(requestDto);
+        newRental.setCar(car);
+        newRental.setUser(getUserById(requestDto.userId()));
         Rental savedRental = rentalRepository.save(newRental);
         return rentalMapper.toDto(savedRental);
     }
 
     @Override
-    public List<RentalResponseDto> getAllCurrentRentals(Long userId, boolean isActive) {
-        return List.of();
+    public List<RentalResponseDto> getRentalsByUserIdAndRentalState(Long userId,
+            boolean isRentalActive) {
+        if (isRentalActive) {
+            return rentalRepository.findAllByUserIdAndActualReturnDateIsNull(userId).stream()
+                    .map(rentalMapper::toDto)
+                    .toList();
+        }
+        return rentalRepository.findAllByUserIdAndActualReturnDateNotNull(userId).stream()
+                .map(rentalMapper::toDto)
+                .toList();
     }
 
     @Override
@@ -55,6 +71,12 @@ public class RentalServiceImpl implements RentalService {
     private User getUserByEmail(String email) {
         return userRepository.findByEmail(email).orElseThrow(
                 () -> new EntityNotFoundException("Can't find user with email: " + email)
+        );
+    }
+
+    private User getUserById(Long userId) {
+        return userRepository.findById(userId).orElseThrow(
+                () -> new EntityNotFoundException("Can't find user by id: " + userId)
         );
     }
 

@@ -7,7 +7,7 @@ import mate.academy.carsharing.dto.rental.RentalResponseDto;
 public interface RentalService {
     RentalResponseDto save(CreateRentalRequestDto requestDto);
 
-    List<RentalResponseDto> getAllCurrentRentals(Long userId, boolean isActive);
+    List<RentalResponseDto> getRentalsByUserIdAndRentalState(Long userId, boolean isRentalActive);
 
     RentalResponseDto getRentalById(Long rentalId, String email);
 
