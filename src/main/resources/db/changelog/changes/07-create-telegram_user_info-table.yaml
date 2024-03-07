@@ -1,0 +1,33 @@
+databaseChangeLog:
+  - changeSet:
+      id: create-telegram_user_info-table
+      author: Krasnov-Maksim
+      changes:
+        - createTable:
+            tableName: telegram_user_info
+            columns:
+              - column:
+                  name: id
+                  type: bigint
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: chat_id
+                  type: bigint
+                  constraints:
+                    nullable: false
+              - column:
+                  name: user_id
+                  type: bigint
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_telegram_user_info_users
+                    references: users(id)
+              - column:
+                  name: deleted
+                  type: boolean
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
