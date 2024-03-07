@@ -12,7 +12,7 @@ public interface RentalService {
     List<RentalResponseDto> searchRentals(
             RentalSearchParametersDto searchParameters, Pageable pageable);
 
-    RentalResponseDto getRentalById(Long rentalId, String email);
+    RentalResponseDto getRentalByIdAndUserEmail(Long id, String email);
 
-    RentalResponseDto returnRental(Long rentalId, String email);
+    RentalResponseDto returnRental(Long id);
 }

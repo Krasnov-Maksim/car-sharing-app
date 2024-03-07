@@ -1,11 +1,14 @@
 package mate.academy.carsharing.service.impl;
 
+import java.time.LocalDate;
 import java.util.List;
+import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import mate.academy.carsharing.dto.rental.CreateRentalRequestDto;
 import mate.academy.carsharing.dto.rental.RentalResponseDto;
 import mate.academy.carsharing.dto.rental.RentalSearchParametersDto;
 import mate.academy.carsharing.exception.EntityNotFoundException;
+import mate.academy.carsharing.exception.RentalException;
 import mate.academy.carsharing.mapper.RentalMapper;
 import mate.academy.carsharing.model.Car;
 import mate.academy.carsharing.model.Rental;
@@ -37,10 +40,9 @@ public class RentalServiceImpl implements RentalService {
         Car car = getCarById(requestDto.carId());
         int inventory = car.getInventory();
         if (inventory < MIN_REQUIRED_CAR_AVAILABLE) {
-            throw new RuntimeException("There is no car available with id: " + requestDto.carId());
+            throw new RentalException("There is no car available with id: " + requestDto.carId());
         }
         car.setInventory(inventory - 1);
-        car = carRepository.save(car);
         Rental newRental = rentalMapper.toModel(requestDto);
         newRental.setCar(car);
         newRental.setUser(getUserById(requestDto.userId()));
@@ -49,8 +51,8 @@ public class RentalServiceImpl implements RentalService {
     }
 
     @Override
-    public RentalResponseDto getRentalById(Long rentalId, String email) {
-        Rental rental = getRentalByIdAndUserId(rentalId, getUserByEmail(email).getId());
+    public RentalResponseDto getRentalByIdAndUserEmail(Long id, String email) {
+        Rental rental = getRentalByIdAndUserId(id, getUserByEmail(email).getId());
         return rentalMapper.toDto(rental);
     }
 
@@ -67,8 +69,15 @@ public class RentalServiceImpl implements RentalService {
 
     @Override
     @Transactional
-    public RentalResponseDto returnRental(Long rentalId, String email) {
-        return null;
+    public RentalResponseDto returnRental(Long id) {
+        Rental rental = getRentalById(id);
+        if (Objects.nonNull(rental.getActualReturnDate())) {
+            throw new RentalException("Rental with id: " + id + " already returned.");
+        }
+        Car car = rental.getCar();
+        car.setInventory(car.getInventory() + 1);
+        rental.setActualReturnDate(LocalDate.now());
+        return rentalMapper.toDto(rentalRepository.save(rental));
     }
 
     private User getUserByEmail(String email) {
@@ -86,6 +95,13 @@ public class RentalServiceImpl implements RentalService {
     private Rental getRentalByIdAndUserId(Long rentalId, Long userId) {
         return rentalRepository
                 .findByIdAndUserId(rentalId, userId).orElseThrow(
+                        () -> new EntityNotFoundException("Can't find rental with id: " + rentalId)
+                );
+    }
+
+    private Rental getRentalById(Long rentalId) {
+        return rentalRepository
+                .findById(rentalId).orElseThrow(
                         () -> new EntityNotFoundException("Can't find rental with id: " + rentalId)
                 );
     }
