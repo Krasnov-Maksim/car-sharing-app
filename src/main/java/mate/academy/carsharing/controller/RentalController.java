@@ -55,16 +55,18 @@ public class RentalController {
     @ResponseStatus(HttpStatus.OK)
     @PreAuthorize("hasRole('ROLE_CUSTOMER')")
     @Operation(summary = "Get rental info by id", description = "Get rental info by id")
+    @Parameter(name = "id", description = "Rental id", example = "247")
     @GetMapping("/{id}")
     public RentalResponseDto getRental(@PathVariable Long id, Authentication authentication) {
-        return rentalService.getRentalById(id, authentication.getName());
+        return rentalService.getRentalByIdAndUserEmail(id, authentication.getName());
     }
 
     @ResponseStatus(HttpStatus.OK)
     @PreAuthorize("hasRole('ROLE_MANAGER')")
     @Operation(summary = "Return rental", description = "Admin can return rental by id")
+    @Parameter(name = "id", description = "Rental id", example = "247")
     @PostMapping("/{id}/return")
-    public RentalResponseDto returnRental(@PathVariable Long id, Authentication authentication) {
-        return rentalService.returnRental(id, authentication.getName());
+    public RentalResponseDto returnRental(@PathVariable Long id) {
+        return rentalService.returnRental(id);
     }
 }
