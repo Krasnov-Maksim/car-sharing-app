@@ -3,6 +3,7 @@ package mate.academy.carsharing.telegram;
 import java.util.Arrays;
 import lombok.RequiredArgsConstructor;
 import mate.academy.carsharing.service.TelegramUserService;
+import mate.academy.carsharing.telegram.dispatcher.CommandDispatcher;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
@@ -19,8 +20,7 @@ public class TelegramBotService extends TelegramLongPollingBot {
     @Value("${TELEGRAM_BOT_USERNAME}")
     private String botUsername;
     private final TelegramUserService telegramUserService;
-    //@Autowired
-    //private CommandDispatcher commandDispatcher;
+    private final CommandDispatcher commandDispatcher;
 
     @Override
     public String getBotToken() {
@@ -37,7 +37,7 @@ public class TelegramBotService extends TelegramLongPollingBot {
                 String[] parts = messageText.split("\\s+");
                 String command = parts[0];
                 String[] args = Arrays.copyOfRange(parts, 1, parts.length);
-                //commandDispatcher.dispatch(chatId, command, args);
+                commandDispatcher.dispatch(chatId, command, args);
             }
         }
     }
@@ -67,8 +67,8 @@ public class TelegramBotService extends TelegramLongPollingBot {
     public boolean isAuthorized(Long chatId, String messageText) {
         TelegramUserState state = telegramUserService.getUserState(chatId);
         if (state == null) {
-            // FIXME:
-            telegramUserService.addUserState(chatId, new TelegramUserState(chatId, "FIXME", true));
+            telegramUserService.addUserState(chatId, new TelegramUserState(chatId,
+                    "no email yet", true));
             sendMessage(chatId, "Enter your email to verify");
             return false;
         }

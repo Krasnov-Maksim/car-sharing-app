@@ -28,4 +28,6 @@ public class TelegramUserInfo {
     @OneToOne
     @JoinColumn(name = "user_id", referencedColumnName = "id")
     private User user;
+    @Column(name = "deleted", nullable = false)
+    private boolean deleted = false;
 }
