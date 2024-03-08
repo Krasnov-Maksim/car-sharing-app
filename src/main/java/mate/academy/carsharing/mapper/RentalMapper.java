@@ -14,8 +14,6 @@ public interface RentalMapper {
     @Mapping(target = "userId", source = "user.id")
     RentalResponseDto toDto(Rental rental);
 
-    //@Mapping(target = "car", ignore = true)
-    //@Mapping(target = "user", ignore = true)
     @Mapping(target = "user.id", source = "userId")
     @Mapping(target = "car.id", source = "carId")
     Rental toModel(CreateRentalRequestDto requestDto);

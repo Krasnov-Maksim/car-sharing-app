@@ -1,5 +1,7 @@
 package mate.academy.carsharing.telegram.dispatcher.handlers;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
@@ -24,6 +26,7 @@ public class CheckRentalsCommandHandler implements CommandHandler {
     private final RentalService rentalService;
     private final TelegramUserInfoRepository telegramUserInfoRepository;
     private final ApplicationEventPublisher eventPublisher;
+    private final ObjectMapper objectMapper;
 
     @Override
     public void handleCommand(Long chatId, String command, String[] args) {
@@ -38,20 +41,31 @@ public class CheckRentalsCommandHandler implements CommandHandler {
         User user = telegramUserInfo.getUser();
 
         String[] userIds = new String[]{user.getId().toString()};
-        String[] isActive = new String[]{"true"};
+        String[] isActive = new String[]{""};
         RentalSearchParametersDto rentalSearchParametersDto =
                 new RentalSearchParametersDto(userIds, isActive);
         Pageable pageable = PageRequest.of(0, 20);
-        List<RentalResponseDto> allCurrentRentals =
+        List<RentalResponseDto> allRentals =
                 rentalService.searchRentals(rentalSearchParametersDto, pageable);
 
-        if (allCurrentRentals.isEmpty()) {
+        if (allRentals.isEmpty()) {
             eventPublisher.publishEvent(
-                    new TelegramMessageEvent(chatId, "You don't have active rentals"));
+                    new TelegramMessageEvent(chatId, "You don't have rentals"));
             return;
         }
+        List<String> resultList = allRentals.stream()
+                .map(dto -> {
+                    try {
+                        return objectMapper.writerWithDefaultPrettyPrinter()
+                                .writeValueAsString(dto);
+                    } catch (JsonProcessingException e) {
+                        throw new RuntimeException(e);
+                    }
+                })
+                .toList();
+
         eventPublisher.publishEvent(
-                new TelegramMessageEvent(chatId, allCurrentRentals.toString()));
+                new TelegramMessageEvent(chatId, resultList.toString()));
     }
 
     @Override

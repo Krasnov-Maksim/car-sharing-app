@@ -2,6 +2,7 @@ package mate.academy.carsharing.service.impl;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.regex.Pattern;
 import lombok.RequiredArgsConstructor;
 import mate.academy.carsharing.model.TelegramUserInfo;
@@ -19,7 +20,7 @@ public class TelegramUserServiceImpl implements TelegramUserService {
     private static final String REGISTRATION_SUCCESS = """
             Registration success. I know next commands: '/checkRentals'
             """;
-    private static final String YOU_ALREADY_REGISTERED = "You already registered";
+    private static final String YOU_ALREADY_REGISTERED = "You are already registered";
     private static final String NOT_VALID_EMAIL = "Not valid email, please send again";
     private final TelegramUserInfoRepository telegramUserInfoRepository;
     private final UserRepository userRepository;
@@ -33,9 +34,13 @@ public class TelegramUserServiceImpl implements TelegramUserService {
                     new TelegramMessageEvent(chatId, NOT_VALID_EMAIL));
             return;
         }
-        if (telegramUserInfoRepository.findByChatId(chatId).isPresent()) {
+        Optional<TelegramUserInfo> optionalWithTelegramUserInfo =
+                telegramUserInfoRepository.findByChatId(chatId);
+        if (optionalWithTelegramUserInfo.isPresent()) {
+            String userFirstName = optionalWithTelegramUserInfo.get().getUser().getFirstName();
             userStates.put(chatId, new TelegramUserState(chatId, username, false));
-            eventPublisher.publishEvent(new TelegramMessageEvent(chatId, YOU_ALREADY_REGISTERED));
+            eventPublisher.publishEvent(new TelegramMessageEvent(chatId,
+                    "Hi, " + userFirstName + " print your command! " /*+ YOU_ALREADY_REGISTERED*/));
             return;
         }
         userStates.put(chatId, new TelegramUserState(chatId, username, false));

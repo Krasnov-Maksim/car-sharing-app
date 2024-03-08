@@ -1,5 +1,7 @@
 package mate.academy.carsharing.service.impl;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Objects;
@@ -17,6 +19,7 @@ import mate.academy.carsharing.repository.car.CarRepository;
 import mate.academy.carsharing.repository.rental.RentalRepository;
 import mate.academy.carsharing.repository.rental.RentalSpecificationBuilder;
 import mate.academy.carsharing.repository.user.UserRepository;
+import mate.academy.carsharing.service.NotificationService;
 import mate.academy.carsharing.service.RentalService;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -27,12 +30,13 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class RentalServiceImpl implements RentalService {
     private static final Integer MIN_REQUIRED_CAR_AVAILABLE = 1;
-
     private final RentalRepository rentalRepository;
     private final UserRepository userRepository;
     private final CarRepository carRepository;
     private final RentalMapper rentalMapper;
     private final RentalSpecificationBuilder rentalSpecificationBuilder;
+    private final NotificationService notificationService;
+    private final ObjectMapper objectMapper;
 
     @Override
     @Transactional
@@ -47,7 +51,9 @@ public class RentalServiceImpl implements RentalService {
         newRental.setCar(car);
         newRental.setUser(getUserById(requestDto.userId()));
         Rental savedRental = rentalRepository.save(newRental);
-        return rentalMapper.toDto(savedRental);
+        RentalResponseDto savedRentalDto = rentalMapper.toDto(savedRental);
+        notifyUser("Your rental created!\\n", savedRentalDto);
+        return savedRentalDto;
     }
 
     @Override
@@ -77,7 +83,23 @@ public class RentalServiceImpl implements RentalService {
         Car car = rental.getCar();
         car.setInventory(car.getInventory() + 1);
         rental.setActualReturnDate(LocalDate.now());
-        return rentalMapper.toDto(rentalRepository.save(rental));
+
+        Rental savedRental = rentalRepository.save(rental);
+        RentalResponseDto savedRentalDto = rentalMapper.toDto(savedRental);
+        notifyUser("you have just returned the rental!\\n", savedRentalDto);
+        return savedRentalDto;
+    }
+
+    private void notifyUser(String message, RentalResponseDto savedRentalDto) {
+        String stringWithRentalDto;
+        try {
+            stringWithRentalDto = objectMapper.writerWithDefaultPrettyPrinter()
+                    .writeValueAsString(savedRentalDto);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
+        notificationService.sendNotification(savedRentalDto.userId(),
+                message + stringWithRentalDto);
     }
 
     private User getUserByEmail(String email) {
