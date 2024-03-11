@@ -8,11 +8,14 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import java.math.BigDecimal;
 import java.net.URL;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 
@@ -26,19 +29,27 @@ public class Payment {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    @ManyToOne
     @JoinColumn(name = "rental_id", nullable = false)
-    private Long rentalId;
+    private Rental rental;
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    @ManyToOne
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
     private Status status;
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
     private Type type;
-    @Column(nullable = false)
+    @Column(name = "session_url", nullable = false)
     private URL sessionUrl;
-    @Column(nullable = false)
+    @Column(name = "session_id", nullable = false)
     private String sessionId;
-    @Column(nullable = false)
+    @Column(name = "amount_to_pay", nullable = false)
     private BigDecimal amountToPay;
     @Column(name = "deleted", nullable = false)
     private boolean deleted = false;
