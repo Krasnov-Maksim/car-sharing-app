@@ -1,5 +1,7 @@
 package mate.academy.carsharing.repository.rental;
 
+import java.time.LocalDate;
+import java.util.List;
 import java.util.Optional;
 import mate.academy.carsharing.model.Rental;
 import org.springframework.data.domain.Page;
@@ -11,4 +13,6 @@ public interface RentalRepository extends JpaRepository<Rental, Long> {
     Optional<Rental> findByIdAndUserId(Long rentalId, Long userId);
 
     Page<Rental> findAll(Specification<Rental> spec, Pageable pageable);
+
+    List<Rental> findAllByReturnDateBeforeAndActualReturnDateIsNull(LocalDate date);
 }

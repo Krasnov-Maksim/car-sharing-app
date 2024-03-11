@@ -23,6 +23,7 @@ import mate.academy.carsharing.service.NotificationService;
 import mate.academy.carsharing.service.RentalService;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,6 +31,8 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class RentalServiceImpl implements RentalService {
     private static final Integer MIN_REQUIRED_CAR_AVAILABLE = 1;
+    private static final String THERE_IS_NO_CAR_AVAILABLE_WITH_ID =
+            "There is no car available with id: ";
     private final RentalRepository rentalRepository;
     private final UserRepository userRepository;
     private final CarRepository carRepository;
@@ -42,17 +45,14 @@ public class RentalServiceImpl implements RentalService {
     @Transactional
     public RentalResponseDto save(CreateRentalRequestDto requestDto) {
         Car car = getCarById(requestDto.carId());
-        int inventory = car.getInventory();
-        if (inventory < MIN_REQUIRED_CAR_AVAILABLE) {
-            throw new RentalException("There is no car available with id: " + requestDto.carId());
-        }
-        car.setInventory(inventory - 1);
+        checkIsCarAvailable(requestDto, car);
+        car.setInventory(car.getInventory() - 1);
         Rental newRental = rentalMapper.toModel(requestDto);
         newRental.setCar(car);
         newRental.setUser(getUserById(requestDto.userId()));
         Rental savedRental = rentalRepository.save(newRental);
         RentalResponseDto savedRentalDto = rentalMapper.toDto(savedRental);
-        notifyUser("Your rental created!\\n", savedRentalDto);
+        notifyUserWithRentalInfo("Your rental created!\\n", savedRentalDto);
         return savedRentalDto;
     }
 
@@ -83,14 +83,43 @@ public class RentalServiceImpl implements RentalService {
         Car car = rental.getCar();
         car.setInventory(car.getInventory() + 1);
         rental.setActualReturnDate(LocalDate.now());
-
         Rental savedRental = rentalRepository.save(rental);
         RentalResponseDto savedRentalDto = rentalMapper.toDto(savedRental);
-        notifyUser("you have just returned the rental!\\n", savedRentalDto);
+        notifyUserWithRentalInfo("you have just returned the rental!\\n", savedRentalDto);
         return savedRentalDto;
     }
 
-    private void notifyUser(String message, RentalResponseDto savedRentalDto) {
+    @Scheduled(cron = "0 0 10 * * *")
+    public void checkOverdueRentals() {
+        LocalDate today = LocalDate.now();
+        List<Rental> overdueRentals =
+                rentalRepository.findAllByReturnDateBeforeAndActualReturnDateIsNull(today);
+        if (overdueRentals.isEmpty()) {
+            notificationService.sendGlobalNotification("No rentals overdue today!");
+            return;
+        }
+        for (Rental rental : overdueRentals) {
+            String message = createOverdueRentalMessage(rental);
+            notificationService.sendNotification(rental.getUser().getId(), message);
+        }
+    }
+
+    private void checkIsCarAvailable(CreateRentalRequestDto requestDto, Car car) {
+        if (car.getInventory() < MIN_REQUIRED_CAR_AVAILABLE) {
+            notificationService.sendNotification(requestDto.userId(),
+                    THERE_IS_NO_CAR_AVAILABLE_WITH_ID + requestDto.carId());
+            throw new RentalException(THERE_IS_NO_CAR_AVAILABLE_WITH_ID + requestDto.carId());
+        }
+    }
+
+    private String createOverdueRentalMessage(Rental rental) {
+        return "Overdue rental alert! Rental ID: " + rental.getId()
+                + ", User ID: " + rental.getUser().getId()
+                + ", Car ID: " + rental.getCar().getId()
+                + ", Return Date: " + rental.getReturnDate();
+    }
+
+    private void notifyUserWithRentalInfo(String message, RentalResponseDto savedRentalDto) {
         String stringWithRentalDto;
         try {
             stringWithRentalDto = objectMapper.writerWithDefaultPrettyPrinter()
