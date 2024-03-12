@@ -8,19 +8,26 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import mate.academy.carsharing.dto.payment.CreatePaymentRequestDto;
 import mate.academy.carsharing.dto.payment.PaymentResponseDto;
+import mate.academy.carsharing.dto.payment.PaymentSearchParametersDto;
 import mate.academy.carsharing.mapper.PaymentMapper;
 import mate.academy.carsharing.model.Payment;
 import mate.academy.carsharing.model.Rental;
+import mate.academy.carsharing.model.Role;
 import mate.academy.carsharing.model.User;
 import mate.academy.carsharing.repository.payment.PaymentRepository;
+import mate.academy.carsharing.repository.payment.PaymentSpecificationBuilder;
 import mate.academy.carsharing.repository.rental.RentalRepository;
+import mate.academy.carsharing.repository.role.RoleRepository;
 import mate.academy.carsharing.repository.user.UserRepository;
 import mate.academy.carsharing.service.NotificationService;
 import mate.academy.carsharing.service.PaymentService;
 import mate.academy.carsharing.stripe.StripeSessionProvider;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
 @RequiredArgsConstructor
@@ -32,25 +39,47 @@ public class StripePaymentServiceImpl implements PaymentService {
     private final PaymentMapper paymentMapper;
     private final RentalRepository rentalRepository;
     private final UserRepository userRepository;
+    private final RoleRepository roleRepository;
     private final NotificationService notificationService;
+    private final PaymentSpecificationBuilder paymentSpecificationBuilder;
     private final StripeSessionProvider stripeSessionProvider;
 
     @Override
-    public PaymentResponseDto save(String email, CreatePaymentRequestDto requestDto) {
-        User user = getUserByEmail(email);
-        Long userId = user.getId();
-        Rental rental = getRentalByIdAndUserId(requestDto.rentalId(), userId);
+    public PaymentResponseDto save(CreatePaymentRequestDto requestDto) {
+        Rental rental = getRentalById(requestDto.rentalId());
+        User user = rental.getUser();
         Payment payment = createPayment(rental);
         try {
             Session session = stripeSessionProvider.createStripeSession(
                     getTotalSum(rental), "Rental Payment");
             payment.setSessionId(session.getId());
             payment.setSessionUrl(new URL(session.getUrl()));
-            notificationService.sendNotification(userId, "Payment URL: " + payment.getSessionUrl());
+            notificationService.sendNotification(user.getId(),
+                    "Payment URL: " + payment.getSessionUrl());
         } catch (StripeException | MalformedURLException e) {
             throw new RuntimeException(e);
         }
         return paymentMapper.toDto(paymentRepository.save(payment));
+    }
+
+    @Override
+    public List<PaymentResponseDto> search(String email,
+            PaymentSearchParametersDto searchParameters, Pageable pageable) {
+        User user = getUserByEmail(email);
+        Role roleManager = getRoleByName(Role.RoleName.ROLE_MANAGER);
+        PaymentSearchParametersDto checkedSearchParameters;
+        if (user.getRoles().contains(roleManager)) {
+            checkedSearchParameters = searchParameters;
+        } else {
+            String[] userIdsArray = {user.getId().toString()};
+            checkedSearchParameters = new PaymentSearchParametersDto(userIdsArray);
+        }
+        Specification<Payment> paymentSpecification =
+                paymentSpecificationBuilder.build(checkedSearchParameters);
+        return paymentRepository.findAll(paymentSpecification, pageable)
+                .stream()
+                .map(paymentMapper::toDto)
+                .toList();
     }
 
     private User getUserByEmail(String email) {
@@ -59,11 +88,24 @@ public class StripePaymentServiceImpl implements PaymentService {
         );
     }
 
-    private Rental getRentalByIdAndUserId(Long rentalId, Long userId) {
-        return rentalRepository.findByIdAndUserId(rentalId, userId)
+    private Role getRoleByName(Role.RoleName roleName) {
+        return roleRepository.findByName(roleName).orElseThrow(
+                () -> new EntityNotFoundException("Can't find role with name: " + roleName.name())
+        );
+    }
+
+    private Long getUserIdByPayment(Payment payment) {
+        Long rentalId = payment.getRental().getId();
+        Rental rental = rentalRepository.findById(rentalId).orElseThrow(
+                () -> new EntityNotFoundException("Can't find rental with id: " + rentalId)
+        );
+        return rental.getUser().getId();
+    }
+
+    private Rental getRentalById(Long rentalId) {
+        return rentalRepository.findById(rentalId)
                 .orElseThrow(
-                        () -> new EntityNotFoundException("Can't find rental with id: " + rentalId +
-                                " for user with id: " + userId)
+                        () -> new EntityNotFoundException("Can't find rental with id: " + rentalId)
                 );
     }
 
@@ -92,5 +134,4 @@ public class StripePaymentServiceImpl implements PaymentService {
                         rental.getRentalDate(), rental.getReturnDate()
                 )));
     }
-
 }
