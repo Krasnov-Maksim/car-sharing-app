@@ -3,35 +3,35 @@ package mate.academy.carsharing.stripe;
 import com.stripe.exception.StripeException;
 import com.stripe.model.checkout.Session;
 import com.stripe.param.checkout.SessionCreateParams;
+import com.stripe.param.checkout.SessionCreateParams.LineItem.PriceData;
 import java.math.BigDecimal;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 @Component
-public class StripeSessionService {
+public class StripeSessionProvider {
     private static final String DEFAULT_CURRENCY = "usd";
     @Value("${STRIPE_SUCCESS_LINK}")
     private String successUrl;
     @Value("${STRIPE_CANCEL_LINK}")
     private String cancelUrl;
 
-    public Session createStripeSession(BigDecimal amount, String name) throws StripeException {
+    public Session createStripeSession(BigDecimal amount, String productName) throws StripeException {
+        PriceData priceData = PriceData.builder()
+                .setCurrency(DEFAULT_CURRENCY)
+                .setUnitAmountDecimal(amount)
+                .setProductData(PriceData.ProductData.builder()
+                        .setName(productName)
+                        .build())
+                .build();
         SessionCreateParams params = SessionCreateParams.builder()
                 .setSuccessUrl(successUrl)
                 .setCancelUrl(cancelUrl)
                 .setMode(SessionCreateParams.Mode.PAYMENT)
-                .addLineItem(
-                        SessionCreateParams.LineItem.builder()
-                                .setQuantity(1L)
-                                .setPriceData(SessionCreateParams.LineItem.PriceData.builder()
-                                        .setCurrency(DEFAULT_CURRENCY)
-                                        .setUnitAmountDecimal(amount)
-                                        .setProductData(SessionCreateParams.LineItem
-                                                .PriceData.ProductData.builder()
-                                                .setName(name)
-                                                .build())
-                                        .build())
-                                .build())
+                .addLineItem(SessionCreateParams.LineItem.builder()
+                        .setQuantity(1L)
+                        .setPriceData(priceData)
+                        .build())
                 .build();
         return Session.create(params);
     }
