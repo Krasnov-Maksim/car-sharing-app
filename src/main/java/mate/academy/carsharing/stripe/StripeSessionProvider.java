@@ -16,11 +16,12 @@ public class StripeSessionProvider {
     @Value("${STRIPE_CANCEL_LINK}")
     private String cancelUrl;
 
-    public Session createStripeSession(BigDecimal amount,
+    public Session createStripeSession(
+            BigDecimal moneyToPay,
             String productName) throws StripeException {
         PriceData priceData = PriceData.builder()
                 .setCurrency(DEFAULT_CURRENCY)
-                .setUnitAmountDecimal(amount)
+                .setUnitAmountDecimal(moneyToPay)
                 .setProductData(PriceData.ProductData.builder()
                         .setName(productName)
                         .build())
