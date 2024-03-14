@@ -4,11 +4,13 @@ import com.stripe.exception.StripeException;
 import com.stripe.model.checkout.Session;
 import jakarta.persistence.EntityNotFoundException;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import mate.academy.carsharing.dto.payment.CreatePaymentRequestDto;
 import mate.academy.carsharing.dto.payment.PaymentResponseDto;
@@ -34,6 +36,7 @@ import org.springframework.stereotype.Service;
 @Service
 public class StripePaymentServiceImpl implements PaymentService {
     private static final BigDecimal CONVERT_TO_CENT = BigDecimal.valueOf(100L);
+    private static final BigDecimal FINE_MULTIPLIER = BigDecimal.valueOf(1.50);
 
     private final PaymentRepository paymentRepository;
     private final PaymentMapper paymentMapper;
@@ -48,10 +51,11 @@ public class StripePaymentServiceImpl implements PaymentService {
     public PaymentResponseDto save(CreatePaymentRequestDto requestDto) {
         Rental rental = getRentalById(requestDto.rentalId());
         User user = rental.getUser();
-        Payment payment = createPayment(rental);
+        BigDecimal totalSum = calculateTotalSum(rental);
+        Payment payment = createPayment(rental, totalSum);
         try {
-            Session session = stripeSessionProvider.createStripeSession(
-                    getTotalSum(rental), "Rental Payment");
+            Session session =
+                    stripeSessionProvider.createStripeSession(totalSum, "Rental Payment");
             payment.setSessionId(session.getId());
             payment.setSessionUrl(new URL(session.getUrl()));
             notificationService.sendNotification(user.getId(),
@@ -82,6 +86,40 @@ public class StripePaymentServiceImpl implements PaymentService {
                 .toList();
     }
 
+    @Override
+    public PaymentResponseDto processSuccessfulPayment(String sessionId) {
+        Payment payment = getPaymentBySessionId(sessionId);
+        Session session;
+        try {
+            session = stripeSessionProvider.retrieveSession(payment.getSessionId());
+        } catch (StripeException e) {
+            throw new RuntimeException(e);
+        }
+        if ("paid".equalsIgnoreCase(session.getPaymentStatus())) {
+            payment.setStatus(Payment.Status.PAID);
+            String message = String.format("Payment with id: %d for the amount: %s successful!",
+                    payment.getId(),
+                    payment.getAmountToPay().divide(CONVERT_TO_CENT, RoundingMode.HALF_UP));
+            notificationService.sendNotification(payment.getUser().getId(), message);
+        }
+        return paymentMapper.toDto(paymentRepository.save(payment));
+    }
+
+    @Override
+    public PaymentResponseDto processCanceledPayment(String sessionId) {
+        Payment payment = getPaymentBySessionId(sessionId);
+        payment.setStatus(Payment.Status.CANCEL);
+        notificationService.sendNotification(payment.getUser().getId(),
+                "Payment failure! The payment can be made later within 24 hours!");
+        return paymentMapper.toDto(paymentRepository.save(payment));
+    }
+
+    private Payment getPaymentBySessionId(String sessionId) {
+        return paymentRepository.findBySessionId(sessionId)
+                .orElseThrow(() -> new EntityNotFoundException(
+                        "Can't find payment with session id: " + sessionId));
+    }
+
     private User getUserByEmail(String email) {
         return userRepository.findByEmail(email).orElseThrow(
                 () -> new EntityNotFoundException("Can't find user with email: " + email)
@@ -94,14 +132,6 @@ public class StripePaymentServiceImpl implements PaymentService {
         );
     }
 
-    private Long getUserIdByPayment(Payment payment) {
-        Long rentalId = payment.getRental().getId();
-        Rental rental = rentalRepository.findById(rentalId).orElseThrow(
-                () -> new EntityNotFoundException("Can't find rental with id: " + rentalId)
-        );
-        return rental.getUser().getId();
-    }
-
     private Rental getRentalById(Long rentalId) {
         return rentalRepository.findById(rentalId)
                 .orElseThrow(
@@ -109,9 +139,9 @@ public class StripePaymentServiceImpl implements PaymentService {
                 );
     }
 
-    private Payment createPayment(Rental rental) {
+    private Payment createPayment(Rental rental, BigDecimal totalSum) {
         Payment payment = new Payment();
-        payment.setAmountToPay(getTotalSum(rental));
+        payment.setAmountToPay(totalSum);
         payment.setStatus(Payment.Status.PENDING);
         payment.setRental(rental);
         payment.setUser(rental.getUser());
@@ -128,10 +158,21 @@ public class StripePaymentServiceImpl implements PaymentService {
         return payment;
     }
 
-    private BigDecimal getTotalSum(Rental rental) {
-        return rental.getCar().getDailyFee().multiply(CONVERT_TO_CENT).multiply(
-                BigDecimal.valueOf(ChronoUnit.DAYS.between(
-                        rental.getRentalDate(), rental.getReturnDate()
-                )));
+    private BigDecimal calculateTotalSum(Rental rental) {
+        BigDecimal alreadyPaid =
+                paymentRepository.getSumByRentalAndPaymentStatus(rental, Payment.Status.PAID);
+        if (Objects.isNull(alreadyPaid)) {
+            alreadyPaid = BigDecimal.ZERO;
+        }
+        BigDecimal baseSum = rental.getCar().getDailyFee().multiply(CONVERT_TO_CENT)
+                .multiply(BigDecimal.valueOf(ChronoUnit.DAYS.between(
+                        rental.getRentalDate(), rental.getReturnDate())));
+        BigDecimal overdueSum = rental.getCar().getDailyFee().multiply(CONVERT_TO_CENT)
+                .multiply(BigDecimal.valueOf(ChronoUnit.DAYS.between(
+                        rental.getReturnDate(), LocalDate.now())))
+                .multiply(FINE_MULTIPLIER);
+        BigDecimal totalSum = baseSum.add(overdueSum).subtract(alreadyPaid);
+        totalSum = totalSum.setScale(0, RoundingMode.CEILING);
+        return totalSum.doubleValue() < 0 ? BigDecimal.ZERO : totalSum;
     }
 }

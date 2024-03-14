@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -42,5 +43,25 @@ public class PaymentController {
     public List<PaymentResponseDto> searchPayments(Authentication authentication,
             PaymentSearchParametersDto searchParameters, Pageable pageable) {
         return paymentService.search(authentication.getName(), searchParameters, pageable);
+    }
+
+    @ResponseStatus(HttpStatus.OK)
+    @PreAuthorize("permitAll()")
+    @Operation(summary = "Stripe redirection endpoint",
+            description = "Mark payment as success, send message to Telegram")
+    @GetMapping("/success")
+    public PaymentResponseDto processSuccessfulPayment(
+            @RequestParam(name = "session_id") String sessionId) {
+        return paymentService.processSuccessfulPayment(sessionId);
+    }
+
+    @ResponseStatus(HttpStatus.OK)
+    @PreAuthorize("permitAll()")
+    @Operation(summary = "Stripe redirection endpoint",
+            description = "Mark payment as canceled, send message to Telegram")
+    @GetMapping("/cancel")
+    public PaymentResponseDto processCanceledPayment(
+            @RequestParam(name = "session_id") String sessionId) {
+        return paymentService.processCanceledPayment(sessionId);
     }
 }

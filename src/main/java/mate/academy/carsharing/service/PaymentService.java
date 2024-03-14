@@ -12,4 +12,8 @@ public interface PaymentService {
 
     List<PaymentResponseDto> search(String email, PaymentSearchParametersDto searchParameters,
             Pageable pageable);
+
+    PaymentResponseDto processSuccessfulPayment(String sessionId);
+
+    PaymentResponseDto processCanceledPayment(String sessionId);
 }
