@@ -30,6 +30,7 @@ import mate.academy.carsharing.service.PaymentService;
 import mate.academy.carsharing.stripe.StripeSessionProvider;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 @RequiredArgsConstructor
@@ -114,16 +115,31 @@ public class StripePaymentServiceImpl implements PaymentService {
         return paymentMapper.toDto(paymentRepository.save(payment));
     }
 
+    @Scheduled(cron = "0 * * * * *")
+    public void checkExpiredStripeSessions() {
+        List<Payment> payments = paymentRepository.findAllByStatus(Payment.Status.PENDING);
+        for (Payment payment : payments) {
+            try {
+                Session session = stripeSessionProvider.retrieveSession(payment.getSessionId());
+                if ("expired".equals(session.getStatus())) {
+                    payment.setStatus(Payment.Status.EXPIRED);
+                    paymentRepository.save(payment);
+                }
+            } catch (StripeException e) {
+                throw new RuntimeException("Can't retrieve session for payment:" + payment, e);
+            }
+        }
+    }
+
     private Payment getPaymentBySessionId(String sessionId) {
-        return paymentRepository.findBySessionId(sessionId)
-                .orElseThrow(() -> new EntityNotFoundException(
-                        "Can't find payment with session id: " + sessionId));
+        return paymentRepository.findBySessionId(sessionId).orElseThrow(
+                () -> new EntityNotFoundException("Can't find payment with session id: "
+                        + sessionId));
     }
 
     private User getUserByEmail(String email) {
         return userRepository.findByEmail(email).orElseThrow(
-                () -> new EntityNotFoundException("Can't find user with email: " + email)
-        );
+                () -> new EntityNotFoundException("Can't find user with email: " + email));
     }
 
     private Role getRoleByName(Role.RoleName roleName) {
@@ -133,10 +149,8 @@ public class StripePaymentServiceImpl implements PaymentService {
     }
 
     private Rental getRentalById(Long rentalId) {
-        return rentalRepository.findById(rentalId)
-                .orElseThrow(
-                        () -> new EntityNotFoundException("Can't find rental with id: " + rentalId)
-                );
+        return rentalRepository.findById(rentalId).orElseThrow(
+                () -> new EntityNotFoundException("Can't find rental with id: " + rentalId));
     }
 
     private Payment createPayment(Rental rental, BigDecimal totalSum) {
