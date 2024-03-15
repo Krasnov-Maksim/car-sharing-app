@@ -15,6 +15,7 @@ import lombok.RequiredArgsConstructor;
 import mate.academy.carsharing.dto.payment.CreatePaymentRequestDto;
 import mate.academy.carsharing.dto.payment.PaymentResponseDto;
 import mate.academy.carsharing.dto.payment.PaymentSearchParametersDto;
+import mate.academy.carsharing.exception.PaymentException;
 import mate.academy.carsharing.mapper.PaymentMapper;
 import mate.academy.carsharing.model.Payment;
 import mate.academy.carsharing.model.Rental;
@@ -128,6 +129,38 @@ public class StripePaymentServiceImpl implements PaymentService {
             } catch (StripeException e) {
                 throw new RuntimeException("Can't retrieve session for payment:" + payment, e);
             }
+        }
+    }
+
+    @Override
+    public PaymentResponseDto renewPaymentSession(Long paymentId, String email) {
+        Payment payment = paymentRepository.findById(paymentId).orElseThrow(
+                () -> new EntityNotFoundException("Can't find payment with id: " + paymentId));
+        Rental rental = payment.getRental();
+        User userByAuthentication = getUserByEmail(email);
+        User userByRental = rental.getUser();
+        Role roleManager = getRoleByName(Role.RoleName.ROLE_MANAGER);
+        if (!userByAuthentication.getRoles().contains(roleManager)) {
+            if (!userByRental.getEmail().equals(email)) {
+                throw new PaymentException("You do not have permission to renew this session");
+            }
+        }
+        if (payment.getStatus().equals(Payment.Status.PAID)) {
+            throw new PaymentException("This payment session cannot be renewed");
+        }
+        if (payment.getStatus().equals(Payment.Status.PENDING)) {
+            throw new PaymentException("No need to renew. The session is active");
+        }
+        try {
+            Session newSession = stripeSessionProvider
+                    .createStripeSession(calculateTotalSum(rental), "Rental repayment");
+            payment.setStatus(Payment.Status.PENDING);
+            payment.setSessionId(newSession.getId());
+            payment.setSessionUrl(new URL(newSession.getUrl()));
+            paymentRepository.save(payment);
+            return paymentMapper.toDto(payment);
+        } catch (StripeException | MalformedURLException e) {
+            throw new RuntimeException(e);
         }
     }
 

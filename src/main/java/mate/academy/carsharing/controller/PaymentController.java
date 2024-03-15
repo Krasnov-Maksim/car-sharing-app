@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import mate.academy.carsharing.dto.payment.CreatePaymentRequestDto;
 import mate.academy.carsharing.dto.payment.PaymentResponseDto;
 import mate.academy.carsharing.dto.payment.PaymentSearchParametersDto;
+import mate.academy.carsharing.dto.payment.RenewPaymentRequestDto;
 import mate.academy.carsharing.service.PaymentService;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -63,5 +64,16 @@ public class PaymentController {
     public PaymentResponseDto processCanceledPayment(
             @RequestParam(name = "session_id") String sessionId) {
         return paymentService.processCanceledPayment(sessionId);
+    }
+
+    @ResponseStatus(HttpStatus.OK)
+    @PreAuthorize("hasAnyRole('ROLE_MANAGER', 'ROLE_CUSTOMER')")
+    @Operation(summary = "Endpoint to renew expired session",
+            description = "User can renew expired session and get new payment link")
+    @PostMapping("/renew")
+    public PaymentResponseDto renewPaymentSession(
+            @RequestBody @Valid RenewPaymentRequestDto requestDto,
+            Authentication authentication) {
+        return paymentService.renewPaymentSession(requestDto.paymentId(), authentication.getName());
     }
 }
