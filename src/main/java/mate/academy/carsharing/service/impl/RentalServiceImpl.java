@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import mate.academy.carsharing.dto.rental.CreateRentalRequestDto;
 import mate.academy.carsharing.dto.rental.RentalResponseDto;
@@ -13,9 +14,11 @@ import mate.academy.carsharing.exception.EntityNotFoundException;
 import mate.academy.carsharing.exception.RentalException;
 import mate.academy.carsharing.mapper.RentalMapper;
 import mate.academy.carsharing.model.Car;
+import mate.academy.carsharing.model.Payment;
 import mate.academy.carsharing.model.Rental;
 import mate.academy.carsharing.model.User;
 import mate.academy.carsharing.repository.car.CarRepository;
+import mate.academy.carsharing.repository.payment.PaymentRepository;
 import mate.academy.carsharing.repository.rental.RentalRepository;
 import mate.academy.carsharing.repository.rental.RentalSpecificationBuilder;
 import mate.academy.carsharing.repository.user.UserRepository;
@@ -36,6 +39,7 @@ public class RentalServiceImpl implements RentalService {
     private final RentalRepository rentalRepository;
     private final UserRepository userRepository;
     private final CarRepository carRepository;
+    private final PaymentRepository paymentRepository;
     private final RentalMapper rentalMapper;
     private final RentalSpecificationBuilder rentalSpecificationBuilder;
     private final NotificationService notificationService;
@@ -44,6 +48,9 @@ public class RentalServiceImpl implements RentalService {
     @Override
     @Transactional
     public RentalResponseDto save(CreateRentalRequestDto requestDto) {
+        if (!isAllowedToRentCar(requestDto.userId())) {
+            throw new RentalException("You can't rent a car. You have expired payments.");
+        }
         Car car = getCarById(requestDto.carId());
         checkIsCarAvailable(requestDto, car);
         car.setInventory(car.getInventory() - 1);
@@ -160,5 +167,14 @@ public class RentalServiceImpl implements RentalService {
     private Car getCarById(Long id) {
         return carRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Can't find car by id: " + id));
+    }
+
+    private boolean isAllowedToRentCar(Long userId) {
+        List<Payment> userPayments = paymentRepository.getAllByUserId(userId);
+        Optional<Payment.Status> optionalWithExpiredPayment = userPayments.stream()
+                .map(Payment::getStatus)
+                .filter(status -> status == Payment.Status.EXPIRED)
+                .findAny();
+        return optionalWithExpiredPayment.isEmpty();
     }
 }
