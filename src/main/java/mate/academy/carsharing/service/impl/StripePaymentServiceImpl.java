@@ -102,7 +102,7 @@ public class StripePaymentServiceImpl implements PaymentService {
             String message = String.format("Payment with id: %d for the amount: %s successful!",
                     payment.getId(),
                     payment.getAmountToPay().divide(CONVERT_TO_CENT, RoundingMode.HALF_UP));
-            notificationService.sendNotification(payment.getUser().getId(), message);
+            notificationService.sendNotification(payment.getRental().getUser().getId(), message);
         }
         return paymentMapper.toDto(paymentRepository.save(payment));
     }
@@ -111,7 +111,7 @@ public class StripePaymentServiceImpl implements PaymentService {
     public PaymentResponseDto processCanceledPayment(String sessionId) {
         Payment payment = getPaymentBySessionId(sessionId);
         payment.setStatus(Payment.Status.CANCEL);
-        notificationService.sendNotification(payment.getUser().getId(),
+        notificationService.sendNotification(payment.getRental().getUser().getId(),
                 "Payment failure! The payment can be made later within 24 hours!");
         return paymentMapper.toDto(paymentRepository.save(payment));
     }
@@ -191,7 +191,6 @@ public class StripePaymentServiceImpl implements PaymentService {
         payment.setAmountToPay(totalSum);
         payment.setStatus(Payment.Status.PENDING);
         payment.setRental(rental);
-        payment.setUser(rental.getUser());
         if (rental.getReturnDate().isAfter(LocalDate.now())) {
             payment.setType(Payment.Type.PAYMENT);
             return payment;

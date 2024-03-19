@@ -11,7 +11,7 @@ import org.mapstruct.Mapping;
 public interface PaymentMapper {
 
     @Mapping(target = "rentalId", source = "rental.id")
-    @Mapping(target = "userId", source = "user.id")
+    @Mapping(target = "userId", source = "rental.user.id")
     PaymentResponseDto toDto(Payment payment);
 
     Payment toModel(CreatePaymentRequestDto requestDto);

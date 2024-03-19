@@ -5,7 +5,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import mate.academy.carsharing.dto.rental.CreateRentalRequestDto;
 import mate.academy.carsharing.dto.rental.RentalResponseDto;
@@ -49,7 +48,7 @@ public class RentalServiceImpl implements RentalService {
     @Transactional
     public RentalResponseDto save(CreateRentalRequestDto requestDto) {
         if (!isAllowedToRentCar(requestDto.userId())) {
-            throw new RentalException("You can't rent a car. You have expired payments.");
+            throw new RentalException("User can't rent a car. There are expired payments.");
         }
         Car car = getCarById(requestDto.carId());
         checkIsCarAvailable(requestDto, car);
@@ -170,11 +169,8 @@ public class RentalServiceImpl implements RentalService {
     }
 
     private boolean isAllowedToRentCar(Long userId) {
-        List<Payment> userPayments = paymentRepository.getAllByUserId(userId);
-        Optional<Payment.Status> optionalWithExpiredPayment = userPayments.stream()
-                .map(Payment::getStatus)
-                .filter(status -> status == Payment.Status.EXPIRED)
-                .findAny();
-        return optionalWithExpiredPayment.isEmpty();
+        List<Payment> expiredPayments = paymentRepository.getAllByUserIdAndPaymentStatus(userId,
+                Payment.Status.EXPIRED);
+        return expiredPayments.isEmpty();
     }
 }

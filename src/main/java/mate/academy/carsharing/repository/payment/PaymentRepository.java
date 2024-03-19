@@ -23,5 +23,6 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
 
     List<Payment> findAllByStatus(Payment.Status status);
 
-    List<Payment> getAllByUserId(Long userId);
+    @Query("SELECT p FROM Payment p WHERE p.status = :paymentStatus AND p.rental.user.id = :userId")
+    List<Payment> getAllByUserIdAndPaymentStatus(Long userId, Payment.Status paymentStatus);
 }

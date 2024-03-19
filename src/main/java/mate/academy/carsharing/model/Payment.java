@@ -34,11 +34,6 @@ public class Payment {
     @ManyToOne
     @JoinColumn(name = "rental_id", nullable = false)
     private Rental rental;
-    @ToString.Exclude
-    @EqualsAndHashCode.Exclude
-    @ManyToOne
-    @JoinColumn(name = "user_id", nullable = false)
-    private User user;
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
     private Status status;
