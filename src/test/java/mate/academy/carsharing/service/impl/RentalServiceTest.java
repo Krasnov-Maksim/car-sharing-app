@@ -63,7 +63,6 @@ public class RentalServiceTest {
     private static final Car.Type VALID_TYPE = Car.Type.SUV;
     private static final Integer VALID_INVENTORY = 2;
     private static final BigDecimal VALID_DAILY_FEE = BigDecimal.TEN;
-    private static final boolean NOT_DELETED = false;
     private static final LocalDate VALID_RENTAL_DATE = LocalDate.now();
     private static final LocalDate VALID_RETURN_DATE = LocalDate.now().plusDays(5);
     private static final LocalDate VALID_ACTUAL_RETURN_DATE = LocalDate.now().plusDays(4);

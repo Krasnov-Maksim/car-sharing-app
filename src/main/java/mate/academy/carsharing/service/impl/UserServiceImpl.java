@@ -63,7 +63,7 @@ public class UserServiceImpl implements UserService {
             user.setLastName(newLastName);
         }
         String newPassword = requestDto.password();
-        if (newPassword != null && newPassword.isBlank()) {
+        if (newPassword != null && !newPassword.isBlank()) {
             user.setPassword(passwordEncoder.encode(newPassword));
         }
         return userMapper.toDto(userRepository.save(user));
