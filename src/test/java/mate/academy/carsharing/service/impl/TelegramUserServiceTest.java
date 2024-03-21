@@ -5,7 +5,6 @@ import static org.mockito.Mockito.when;
 
 import java.util.HashSet;
 import java.util.Optional;
-import mate.academy.carsharing.model.TelegramUserInfo;
 import mate.academy.carsharing.model.User;
 import mate.academy.carsharing.repository.telegram.TelegramUserInfoRepository;
 import mate.academy.carsharing.repository.user.UserRepository;
@@ -15,8 +14,6 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -40,8 +37,6 @@ public class TelegramUserServiceTest {
     private TelegramUserInfoRepository telegramUserInfoRepository;
     @Mock
     private ApplicationEventPublisher eventPublisher;
-    @Captor
-    private ArgumentCaptor<User> captor;
     @InjectMocks
     private TelegramUserServiceImpl telegramUserService;
 
