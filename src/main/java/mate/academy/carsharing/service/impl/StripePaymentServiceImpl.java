@@ -2,7 +2,6 @@ package mate.academy.carsharing.service.impl;
 
 import com.stripe.exception.StripeException;
 import com.stripe.model.checkout.Session;
-import jakarta.persistence.EntityNotFoundException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.net.MalformedURLException;
@@ -15,6 +14,7 @@ import lombok.RequiredArgsConstructor;
 import mate.academy.carsharing.dto.payment.CreatePaymentRequestDto;
 import mate.academy.carsharing.dto.payment.PaymentResponseDto;
 import mate.academy.carsharing.dto.payment.PaymentSearchParametersDto;
+import mate.academy.carsharing.exception.EntityNotFoundException;
 import mate.academy.carsharing.exception.PaymentException;
 import mate.academy.carsharing.mapper.PaymentMapper;
 import mate.academy.carsharing.model.Payment;
