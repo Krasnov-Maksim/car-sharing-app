@@ -46,7 +46,7 @@ public class Payment {
     private String sessionId;
     @Column(name = "amount_to_pay", nullable = false)
     private BigDecimal amountToPay;
-    @Column(name = "deleted", nullable = false)
+    @Column(name = "deleted", nullable = false, columnDefinition = "TINYINT")
     private boolean deleted = false;
 
     public enum Status {
