@@ -1,5 +1,14 @@
 package mate.academy.carsharing.service.impl;
 
+import static mate.academy.carsharing.util.TestUtils.NOT_VALID_ID;
+import static mate.academy.carsharing.util.TestUtils.VALID_EMAIL;
+import static mate.academy.carsharing.util.TestUtils.VALID_ID;
+import static mate.academy.carsharing.util.TestUtils.VALID_SESSION_ID;
+import static mate.academy.carsharing.util.TestUtils.VALID_SESSION_URL;
+import static mate.academy.carsharing.util.TestUtils.createValidPayment;
+import static mate.academy.carsharing.util.TestUtils.createValidPaymentResponseDto;
+import static mate.academy.carsharing.util.TestUtils.createValidRental;
+import static mate.academy.carsharing.util.TestUtils.createValidUser;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -14,9 +23,6 @@ import com.stripe.exception.StripeException;
 import com.stripe.model.checkout.Session;
 import java.math.BigDecimal;
 import java.net.MalformedURLException;
-import java.net.URL;
-import java.time.LocalDate;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import mate.academy.carsharing.dto.payment.CreatePaymentRequestDto;
@@ -24,7 +30,6 @@ import mate.academy.carsharing.dto.payment.PaymentResponseDto;
 import mate.academy.carsharing.dto.payment.PaymentSearchParametersDto;
 import mate.academy.carsharing.exception.EntityNotFoundException;
 import mate.academy.carsharing.mapper.PaymentMapper;
-import mate.academy.carsharing.model.Car;
 import mate.academy.carsharing.model.Payment;
 import mate.academy.carsharing.model.Rental;
 import mate.academy.carsharing.model.Role;
@@ -53,16 +58,6 @@ import org.springframework.data.jpa.domain.Specification;
 
 @ExtendWith(MockitoExtension.class)
 public class StripePaymentServiceTest {
-    private static final String VALID_EMAIL = "test@email.com";
-    private static final String VALID_PASSWORD = "Password";
-    private static final String VALID_FIRST_NAME = "First Name";
-    private static final String VALID_LAST_NAME = "Last Name";
-    private static final Long VALID_ID = 1L;
-    private static final Long INVALID_ID = -1L;
-    private static final LocalDate VALID_RENTAL_DAY = LocalDate.now();
-    private static final LocalDate VALID_RETURN_DAY = LocalDate.now().plusDays(5);
-    private static final String VALID_SESSION_ID = "stripe_session_id";
-    private static final String VALID_SESSION_URL = "http://payment.url";
     @Mock
     private PaymentRepository paymentRepository;
     @Mock
@@ -81,56 +76,6 @@ public class StripePaymentServiceTest {
     private PaymentSpecificationBuilder paymentSpecificationBuilder;
     @InjectMocks
     private StripePaymentServiceImpl stripeService;
-
-    private User createValidUser() {
-        User user = new User();
-        user.setId(VALID_ID);
-        user.setEmail(VALID_EMAIL);
-        user.setPassword(VALID_PASSWORD);
-        user.setRoles(new HashSet<>());
-        user.setLastName(VALID_LAST_NAME);
-        user.setFirstName(VALID_FIRST_NAME);
-        return user;
-    }
-
-    private Rental createValidRental() {
-        Rental rental = new Rental();
-        rental.setId(VALID_ID);
-        rental.setRentalDate(VALID_RENTAL_DAY);
-        rental.setReturnDate(VALID_RETURN_DAY);
-        Car car = new Car();
-        car.setId(VALID_ID);
-        car.setDailyFee(BigDecimal.TEN);
-        rental.setCar(car);
-        rental.setUser(createValidUser());
-        rental.setDeleted(false);
-        return rental;
-    }
-
-    private Payment createValidPayment() throws MalformedURLException {
-        Payment payment = new Payment();
-        payment.setId(VALID_ID);
-        payment.setRental(createValidRental());
-        payment.setSessionUrl(new URL(VALID_SESSION_URL));
-        payment.setStatus(Payment.Status.PENDING);
-        payment.setSessionId(VALID_SESSION_ID);
-        payment.setType(Payment.Type.PAYMENT);
-        payment.setAmountToPay(BigDecimal.TEN);
-        return payment;
-    }
-
-    private PaymentResponseDto createValidPaymentResponseDto() {
-        return new PaymentResponseDto(
-                VALID_ID,
-                VALID_ID,
-                VALID_ID,
-                Payment.Status.PENDING.name(),
-                Payment.Type.PAYMENT.name(),
-                VALID_SESSION_URL,
-                VALID_SESSION_ID,
-                BigDecimal.TEN
-        );
-    }
 
     @Test
     @DisplayName("save() method works")
@@ -323,11 +268,11 @@ public class StripePaymentServiceTest {
     @DisplayName("renewPaymentSession() method with invalid 'paymentId' "
             + "throws EntityNotFoundException")
     void renewPaymentSession_WitInvalidPaymentId_ThrowEntityNotFoundException() {
-        when(paymentRepository.findById(INVALID_ID))
+        when(paymentRepository.findById(NOT_VALID_ID))
                 .thenReturn(Optional.empty());
 
         Assertions.assertThrows(EntityNotFoundException.class,
-                () -> stripeService.renewPaymentSession(INVALID_ID, VALID_EMAIL));
+                () -> stripeService.renewPaymentSession(NOT_VALID_ID, VALID_EMAIL));
     }
 
     @Test

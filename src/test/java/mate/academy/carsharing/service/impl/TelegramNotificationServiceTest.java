@@ -1,10 +1,10 @@
 package mate.academy.carsharing.service.impl;
 
+import static mate.academy.carsharing.util.TestUtils.createValidUser;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import mate.academy.carsharing.model.TelegramUserInfo;
@@ -22,28 +22,12 @@ import org.springframework.context.ApplicationEventPublisher;
 
 @ExtendWith(MockitoExtension.class)
 public class TelegramNotificationServiceTest {
-    private static final String VALID_EMAIL = "testemail@email.com";
-    private static final String VALID_PASSWORD = "Password";
-    private static final String VALID_FIRST_NAME = "First Name";
-    private static final String VALID_LAST_NAME = "Last Name";
-    private static final Long VALID_ID = 1L;
     @Mock
     private ApplicationEventPublisher eventPublisher;
     @Mock
     private TelegramUserInfoRepository telegramUserInfoRepository;
     @InjectMocks
     private TelegramNotificationServiceImpl telegramNotificationService;
-
-    private User createValidUser() {
-        User user = new User();
-        user.setId(VALID_ID);
-        user.setEmail(VALID_EMAIL);
-        user.setPassword(VALID_PASSWORD);
-        user.setRoles(new HashSet<>());
-        user.setLastName(VALID_LAST_NAME);
-        user.setFirstName(VALID_FIRST_NAME);
-        return user;
-    }
 
     @Test
     @DisplayName("sendNotification() method sends message to a specific user")

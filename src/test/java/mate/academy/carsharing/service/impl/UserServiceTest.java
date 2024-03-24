@@ -1,12 +1,24 @@
 package mate.academy.carsharing.service.impl;
 
+import static mate.academy.carsharing.util.TestUtils.NOT_VALID_EMAIL;
+import static mate.academy.carsharing.util.TestUtils.VALID_EMAIL;
+import static mate.academy.carsharing.util.TestUtils.VALID_FIRST_NAME;
+import static mate.academy.carsharing.util.TestUtils.VALID_ID;
+import static mate.academy.carsharing.util.TestUtils.VALID_NEW_LAST_NAME;
+import static mate.academy.carsharing.util.TestUtils.VALID_ROLE;
+import static mate.academy.carsharing.util.TestUtils.createValidRole;
+import static mate.academy.carsharing.util.TestUtils.createValidUser;
+import static mate.academy.carsharing.util.TestUtils.createValidUserRegistrationRequestDto;
+import static mate.academy.carsharing.util.TestUtils.createValidUserResponseDto;
+import static mate.academy.carsharing.util.TestUtils.createValidUserUpdateInfoRequestDto;
+import static mate.academy.carsharing.util.TestUtils.createValidUserUpdateRoleRequestDto;
+import static mate.academy.carsharing.util.TestUtils.createValidUserWithRoleResponseDto;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
 import mate.academy.carsharing.dto.user.UserRegistrationRequestDto;
@@ -31,14 +43,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 
 @ExtendWith(MockitoExtension.class)
 public class UserServiceTest {
-    private static final String VALID_EMAIL = "test@email.com";
-    private static final String VALID_PASSWORD = "Password";
-    private static final String VALID_FIRST_NAME = "First Name";
-    private static final String VALID_LAST_NAME = "Last Name";
-    private static final String VALID_NEW_LAST_NAME = "New Last Name";
-    private static final String NOT_VALID_EMAIL = "not_valid_email@mail.com";
-    private static final Long VALID_ID = 1L;
-    private static final Role.RoleName VALID_ROLE = Role.RoleName.ROLE_CUSTOMER;
     @Mock
     private UserRepository userRepository;
     @Mock
@@ -49,65 +53,6 @@ public class UserServiceTest {
     private PasswordEncoder passwordEncoder;
     @InjectMocks
     private UserServiceImpl userService;
-
-    private User createValidUser() {
-        User user = new User();
-        user.setId(VALID_ID);
-        user.setEmail(VALID_EMAIL);
-        user.setPassword(VALID_PASSWORD);
-        user.setRoles(new HashSet<>());
-        user.setLastName(VALID_LAST_NAME);
-        user.setFirstName(VALID_FIRST_NAME);
-        return user;
-    }
-
-    private UserRegistrationRequestDto createValidUserRegistrationRequestDto() {
-        return new UserRegistrationRequestDto(
-                VALID_EMAIL,
-                VALID_PASSWORD,
-                VALID_PASSWORD,
-                VALID_FIRST_NAME,
-                VALID_LAST_NAME
-        );
-    }
-
-    private UserResponseDto createValidUserResponseDto() {
-        return new UserResponseDto(
-                VALID_ID,
-                VALID_EMAIL,
-                VALID_FIRST_NAME,
-                VALID_LAST_NAME
-        );
-    }
-
-    private UserUpdateRoleRequestDto createValidUserUpdateRoleRequestDto() {
-        return new UserUpdateRoleRequestDto(createValidRole(VALID_ID, Role.RoleName.ROLE_CUSTOMER));
-    }
-
-    private Role createValidRole(Long roleId, Role.RoleName roleName) {
-        Role role = new Role();
-        role.setId(roleId);
-        role.setName(roleName);
-        return role;
-    }
-
-    private UserResponseDtoWithRoles createValidUserWithRoleResponseDto() {
-        return new UserResponseDtoWithRoles(
-                VALID_ID,
-                VALID_EMAIL,
-                VALID_FIRST_NAME,
-                VALID_LAST_NAME,
-                Set.of(createValidRole(VALID_ID, Role.RoleName.ROLE_CUSTOMER))
-        );
-    }
-
-    private UserUpdateInfoRequestDto createValidUserUpdateInfoRequestDto() {
-        return new UserUpdateInfoRequestDto(
-                VALID_PASSWORD,
-                VALID_FIRST_NAME,
-                VALID_NEW_LAST_NAME
-        );
-    }
 
     @Test
     @DisplayName("register() method works")

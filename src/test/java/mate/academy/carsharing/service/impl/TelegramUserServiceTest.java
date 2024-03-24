@@ -1,11 +1,16 @@
 package mate.academy.carsharing.service.impl;
 
+import static mate.academy.carsharing.util.TestUtils.NOT_VALID_EMAIL;
+import static mate.academy.carsharing.util.TestUtils.REGISTRATION_SUCCESS;
+import static mate.academy.carsharing.util.TestUtils.VALID_CHAT_ID;
+import static mate.academy.carsharing.util.TestUtils.VALID_EMAIL;
+import static mate.academy.carsharing.util.TestUtils.VALID_ID;
+import static mate.academy.carsharing.util.TestUtils.createValidTelegramUserState;
+import static mate.academy.carsharing.util.TestUtils.createValidUser;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import java.util.HashSet;
 import java.util.Optional;
-import mate.academy.carsharing.model.User;
 import mate.academy.carsharing.repository.telegram.TelegramUserInfoRepository;
 import mate.academy.carsharing.repository.user.UserRepository;
 import mate.academy.carsharing.telegram.TelegramMessageEvent;
@@ -21,16 +26,6 @@ import org.springframework.context.ApplicationEventPublisher;
 
 @ExtendWith(MockitoExtension.class)
 public class TelegramUserServiceTest {
-    private static final String REGISTRATION_SUCCESS = """
-            Registration success. I know next commands: '/checkRentals'
-            """;
-    private static final String VALID_EMAIL = "testemail@mail.com";
-    private static final String INVALID_EMAIL = "NOT VALID EMAIL";
-    private static final Long VALID_ID = 1L;
-    private static final Long VALID_CHAT_ID = 123456L;
-    private static final String VALID_PASSWORD = "Password";
-    private static final String VALID_FIRST_NAME = "First Name";
-    private static final String VALID_LAST_NAME = "Last Name";
     @Mock
     private UserRepository userRepository;
     @Mock
@@ -40,29 +35,10 @@ public class TelegramUserServiceTest {
     @InjectMocks
     private TelegramUserServiceImpl telegramUserService;
 
-    private User createValidUser() {
-        User user = new User();
-        user.setId(VALID_ID);
-        user.setEmail(VALID_EMAIL);
-        user.setLastName(VALID_LAST_NAME);
-        user.setFirstName(VALID_FIRST_NAME);
-        user.setPassword(VALID_PASSWORD);
-        user.setRoles(new HashSet<>());
-        return user;
-    }
-
-    private TelegramUserState createValidTelegramUserState() {
-        return new TelegramUserState(
-                VALID_ID,
-                VALID_EMAIL,
-                true
-        );
-    }
-
     @Test
     @DisplayName("registerNewUser() method with invalid 'email' sends error message")
     public void registerNewUser_WithValidChatIdAndInvalidEmail_SendErrorMessage() {
-        telegramUserService.registerNewUser(VALID_CHAT_ID, INVALID_EMAIL);
+        telegramUserService.registerNewUser(VALID_CHAT_ID, NOT_VALID_EMAIL);
 
         verify(eventPublisher).publishEvent(
                 new TelegramMessageEvent(VALID_CHAT_ID,

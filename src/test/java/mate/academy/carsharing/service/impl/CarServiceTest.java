@@ -1,11 +1,15 @@
 package mate.academy.carsharing.service.impl;
 
+import static mate.academy.carsharing.util.TestUtils.NOT_VALID_ID;
+import static mate.academy.carsharing.util.TestUtils.VALID_ID;
+import static mate.academy.carsharing.util.TestUtils.createValidCar;
+import static mate.academy.carsharing.util.TestUtils.createValidCarRequestDto;
+import static mate.academy.carsharing.util.TestUtils.createValidCarResponseDto;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 import mate.academy.carsharing.dto.car.CarResponseDto;
@@ -26,51 +30,12 @@ import org.springframework.data.domain.Pageable;
 
 @ExtendWith(MockitoExtension.class)
 public class CarServiceTest {
-    private static final Long VALID_ID = 1L;
-    private static final Long NOT_VALID_ID = -1L;
-    private static final String VALID_MODEL = "Valid Model";
-    private static final String VALID_BRAND = "Valid Brand";
-    private static final Car.Type VALID_TYPE = Car.Type.SUV;
-    private static final Integer VALID_INVENTORY = 10;
-    private static final BigDecimal VALID_DAILY_FEE = BigDecimal.TEN;
     @Mock
     private CarRepository carRepository;
     @Mock
     private CarMapper carMapper;
     @InjectMocks
     private CarServiceImpl carService;
-
-    private Car createValidCar() {
-        Car car = new Car();
-        car.setId(VALID_ID);
-        car.setModel(VALID_MODEL);
-        car.setBrand(VALID_BRAND);
-        car.setType(VALID_TYPE);
-        car.setInventory(VALID_INVENTORY);
-        car.setDailyFee(VALID_DAILY_FEE);
-        return car;
-    }
-
-    private CreateCarRequestDto createValidCarRequestDto() {
-        return new CreateCarRequestDto(
-                VALID_MODEL,
-                VALID_BRAND,
-                VALID_TYPE,
-                VALID_INVENTORY,
-                VALID_DAILY_FEE
-        );
-    }
-
-    private CarResponseDto createValidCarResponseDto() {
-        CarResponseDto carResponseDto = new CarResponseDto();
-        carResponseDto.setId(VALID_ID);
-        carResponseDto.setModel(VALID_MODEL);
-        carResponseDto.setBrand(VALID_BRAND);
-        carResponseDto.setType(VALID_TYPE);
-        carResponseDto.setInventory(VALID_INVENTORY);
-        carResponseDto.setDailyFee(VALID_DAILY_FEE);
-        return carResponseDto;
-    }
 
     @Test
     @DisplayName("save() method works")

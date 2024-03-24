@@ -1,7 +1,19 @@
 package mate.academy.carsharing.service.impl;
 
 import static mate.academy.carsharing.model.Payment.Status;
-import static mate.academy.carsharing.model.Payment.Type;
+import static mate.academy.carsharing.util.TestUtils.VALID_ACTUAL_RETURN_DATE;
+import static mate.academy.carsharing.util.TestUtils.VALID_EMAIL;
+import static mate.academy.carsharing.util.TestUtils.VALID_ID;
+import static mate.academy.carsharing.util.TestUtils.VALID_RENTAL_DATE;
+import static mate.academy.carsharing.util.TestUtils.VALID_RETURN_DATE;
+import static mate.academy.carsharing.util.TestUtils.createExpiredPayments;
+import static mate.academy.carsharing.util.TestUtils.createOverdueRental;
+import static mate.academy.carsharing.util.TestUtils.createValidCar;
+import static mate.academy.carsharing.util.TestUtils.createValidRental;
+import static mate.academy.carsharing.util.TestUtils.createValidRentalRequestDto;
+import static mate.academy.carsharing.util.TestUtils.createValidRentalResponseDto;
+import static mate.academy.carsharing.util.TestUtils.createValidUser;
+import static mate.academy.carsharing.util.TestUtils.returnedRentalResponseDto;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -13,9 +25,6 @@ import static org.mockito.Mockito.when;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
-import java.math.BigDecimal;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.time.LocalDate;
 import java.util.Collections;
 import java.util.List;
@@ -53,19 +62,6 @@ import org.springframework.data.jpa.domain.Specification;
 
 @ExtendWith(MockitoExtension.class)
 public class RentalServiceTest {
-    private static final String VALID_EMAIL = "test@email.com";
-    private static final String VALID_PASSWORD = "Password";
-    private static final String VALID_FIRST_NAME = "First Name";
-    private static final String VALID_LAST_NAME = "Last Name";
-    private static final Long VALID_ID = 1L;
-    private static final String VALID_MODEL = "Valid Model";
-    private static final String VALID_BRAND = "Valid Brand";
-    private static final Car.Type VALID_TYPE = Car.Type.SUV;
-    private static final Integer VALID_INVENTORY = 2;
-    private static final BigDecimal VALID_DAILY_FEE = BigDecimal.TEN;
-    private static final LocalDate VALID_RENTAL_DATE = LocalDate.now();
-    private static final LocalDate VALID_RETURN_DATE = LocalDate.now().plusDays(5);
-    private static final LocalDate VALID_ACTUAL_RETURN_DATE = LocalDate.now().plusDays(4);
     @Mock
     private RentalRepository rentalRepository;
     @Mock
@@ -343,94 +339,4 @@ public class RentalServiceTest {
         verify(notificationService, times(1))
                 .sendGlobalNotification(anyString());
     }
-
-    private User createValidUser() {
-        User user = new User();
-        user.setId(VALID_ID);
-        user.setEmail(VALID_EMAIL);
-        user.setFirstName(VALID_FIRST_NAME);
-        user.setLastName(VALID_LAST_NAME);
-        user.setPassword(VALID_PASSWORD);
-        return user;
-    }
-
-    private Car createValidCar() {
-        Car car = new Car();
-        car.setId(VALID_ID);
-        car.setModel(VALID_MODEL);
-        car.setBrand(VALID_BRAND);
-        car.setType(VALID_TYPE);
-        car.setInventory(VALID_INVENTORY);
-        car.setDailyFee(VALID_DAILY_FEE);
-        return car;
-    }
-
-    private Rental createValidRental() {
-        Rental rental = new Rental();
-        rental.setId(VALID_ID);
-        rental.setRentalDate(VALID_RENTAL_DATE);
-        rental.setReturnDate(VALID_RETURN_DATE);
-        rental.setCar(createValidCar());
-        rental.setUser(createValidUser());
-        return rental;
-    }
-
-    private CreateRentalRequestDto createValidRentalRequestDto() {
-        return new CreateRentalRequestDto(
-                VALID_RENTAL_DATE,
-                VALID_RETURN_DATE,
-                VALID_ID,
-                VALID_ID
-        );
-    }
-
-    private RentalResponseDto createValidRentalResponseDto() {
-        return new RentalResponseDto(
-                VALID_ID,
-                VALID_RENTAL_DATE,
-                VALID_RETURN_DATE,
-                null,
-                VALID_ID,
-                VALID_ID
-        );
-    }
-
-    private Payment createExpiredPayments() {
-        Payment payment = new Payment();
-        payment.setId(VALID_ID);
-        payment.setRental(createValidRental());
-        try {
-            payment.setSessionUrl(new URL("http://localhost:8080/"));
-        } catch (MalformedURLException e) {
-            throw new RuntimeException(e);
-        }
-        payment.setStatus(Status.EXPIRED);
-        payment.setSessionId("SESSION ID");
-        payment.setType(Type.PAYMENT);
-        payment.setAmountToPay(BigDecimal.TEN);
-        return payment;
-    }
-
-    private RentalResponseDto returnedRentalResponseDto() {
-        return new RentalResponseDto(
-                VALID_ID,
-                VALID_RENTAL_DATE,
-                VALID_RETURN_DATE,
-                VALID_ACTUAL_RETURN_DATE,
-                VALID_ID,
-                VALID_ID
-        );
-    }
-
-    private Rental createOverdueRental() {
-        Rental rental = new Rental();
-        rental.setId(VALID_ID);
-        rental.setRentalDate(LocalDate.now().minusDays(5));
-        rental.setReturnDate(VALID_RETURN_DATE);
-        rental.setCar(createValidCar());
-        rental.setUser(createValidUser());
-        rental.setDeleted(false);
-        return rental;
-    }
-
 }
