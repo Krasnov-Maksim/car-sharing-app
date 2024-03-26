@@ -1,5 +1,6 @@
 package mate.academy.carsharing.controller;
 
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -17,7 +18,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
-@Tag(name = "Authentication manager", description = "Endpoints for registration")
+@Tag(name = "Authentication controller", description = "Endpoints for registration and login.")
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/auth")
@@ -26,6 +27,7 @@ public class AuthenticationController {
     private final AuthenticationService authenticationService;
 
     @ResponseStatus(HttpStatus.CREATED)
+    @Operation(summary = "Register a new user.", description = "Register a new user.")
     @PostMapping("/registration")
     public UserResponseDto register(@RequestBody @Valid UserRegistrationRequestDto request)
             throws RegistrationException {
@@ -33,6 +35,8 @@ public class AuthenticationController {
     }
 
     @PostMapping("/login")
+    @Operation(summary = "Login to the app.",
+            description = "Login to the app, get JWT Token and use it to request data.")
     public UserLoginResponseDto login(@RequestBody @Valid UserLoginRequestDto requestDto) {
         return authenticationService.authentication(requestDto);
     }
