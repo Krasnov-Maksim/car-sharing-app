@@ -34,11 +34,6 @@ public class Payment {
     @ManyToOne
     @JoinColumn(name = "rental_id", nullable = false)
     private Rental rental;
-    @ToString.Exclude
-    @EqualsAndHashCode.Exclude
-    @ManyToOne
-    @JoinColumn(name = "user_id", nullable = false)
-    private User user;
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
     private Status status;
@@ -51,7 +46,7 @@ public class Payment {
     private String sessionId;
     @Column(name = "amount_to_pay", nullable = false)
     private BigDecimal amountToPay;
-    @Column(name = "deleted", nullable = false)
+    @Column(name = "deleted", nullable = false, columnDefinition = "TINYINT")
     private boolean deleted = false;
 
     public enum Status {

@@ -20,13 +20,13 @@ databaseChangeLog:
                     nullable: false
                     foreignKeyName: fk_payments_rentals
                     references: rentals(id)
-              - column:
-                  name: user_id
-                  type: bigint
-                  constraints:
-                    nullable: false
-                    foreignKeyName: fk_payments_users
-                    references: users(id)
+#              - column:
+#                  name: user_id
+#                  type: bigint
+#                  constraints:
+#                    nullable: false
+#                    foreignKeyName: fk_payments_users
+#                    references: users(id)
               - column:
                   name: status
                   type: "ENUM('PAID', 'PENDING', 'CANCEL', 'EXPIRED')"

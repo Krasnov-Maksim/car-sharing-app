@@ -6,6 +6,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import mate.academy.carsharing.annotation.UserRoleDescription;
 import mate.academy.carsharing.dto.rental.CreateRentalRequestDto;
 import mate.academy.carsharing.dto.rental.RentalResponseDto;
 import mate.academy.carsharing.dto.rental.RentalSearchParametersDto;
@@ -22,7 +23,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
-@Tag(name = "Rental managing", description = "Endpoint to rentals managing")
+@Tag(name = "Rental managing", description = "Endpoint for managing rentals")
 @RequiredArgsConstructor
 @RestController
 @RequestMapping("api/rentals")
@@ -31,7 +32,8 @@ public class RentalController {
 
     @ResponseStatus(HttpStatus.CREATED)
     @PreAuthorize("hasRole('ROLE_MANAGER')")
-    @Operation(summary = "Create a new rental", description = "Admin creates a new rental")
+    @UserRoleDescription
+    @Operation(summary = "Create a new rental.", description = "Admin can create a new rental.")
     @PostMapping()
     public RentalResponseDto create(@RequestBody @Valid CreateRentalRequestDto requestDto) {
         return rentalService.save(requestDto);
@@ -39,8 +41,9 @@ public class RentalController {
 
     @ResponseStatus(HttpStatus.OK)
     @PreAuthorize("hasRole('ROLE_MANAGER')")
-    @Operation(summary = "Get list of rentals", description = "Admin can get list of "
-            + "active/nonactive rentals for any number of specified users or for all users")
+    @UserRoleDescription
+    @Operation(summary = "Get list of rentals.", description = "Admin can get list of "
+            + "active/nonactive rentals for any number of specified users or for all users.")
     @Parameter(name = "user_id", description = "Get rentals for users with specified 'user_id'."
             + "To get rentals for all users do not specify any value.", example = "2, 57")
     @Parameter(name = "is_active", description = "Specify 'true' to get active rentals or "
@@ -54,7 +57,8 @@ public class RentalController {
 
     @ResponseStatus(HttpStatus.OK)
     @PreAuthorize("hasRole('ROLE_CUSTOMER')")
-    @Operation(summary = "Get rental info by id", description = "Get rental info by id")
+    @UserRoleDescription
+    @Operation(summary = "Get rental info by id.", description = "Get rental info by id.")
     @Parameter(name = "id", description = "Rental id", example = "247")
     @GetMapping("/{id}")
     public RentalResponseDto getRental(@PathVariable Long id, Authentication authentication) {
@@ -63,7 +67,8 @@ public class RentalController {
 
     @ResponseStatus(HttpStatus.OK)
     @PreAuthorize("hasRole('ROLE_MANAGER')")
-    @Operation(summary = "Return rental", description = "Admin can return rental by id")
+    @UserRoleDescription
+    @Operation(summary = "Return rental.", description = "Admin can return rental by id.")
     @Parameter(name = "id", description = "Rental id", example = "247")
     @PostMapping("/{id}/return")
     public RentalResponseDto returnRental(@PathVariable Long id) {

@@ -13,3 +13,9 @@ databaseChangeLog:
       file: db/changelog/changes/06-create-rentals-table.yaml
   - include:
       file: db/changelog/changes/07-create-telegram_user_info-table.yaml
+  - include:
+      file: db/changelog/changes/08-create-payments-table.yaml
+  - include:
+      file: db/changelog/changes/09-add-manager-and-2_customers-into-users-table.yaml
+  - include:
+      file: db/changelog/changes/10-add-2_cars-into-cars-table.yaml

@@ -1,13 +1,16 @@
 package mate.academy.carsharing.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import mate.academy.carsharing.annotation.UserRoleDescription;
 import mate.academy.carsharing.dto.payment.CreatePaymentRequestDto;
 import mate.academy.carsharing.dto.payment.PaymentResponseDto;
 import mate.academy.carsharing.dto.payment.PaymentSearchParametersDto;
+import mate.academy.carsharing.dto.payment.RenewPaymentRequestDto;
 import mate.academy.carsharing.service.PaymentService;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -30,7 +33,8 @@ public class PaymentController {
 
     @ResponseStatus(HttpStatus.CREATED)
     @PreAuthorize("hasRole('ROLE_MANAGER')")
-    @Operation(summary = "Create new payment", description = "Create new payment session")
+    @UserRoleDescription
+    @Operation(summary = "Create new payment.", description = "Create new payment session.")
     @PostMapping()
     public PaymentResponseDto createPayment(
             @RequestBody @Valid CreatePaymentRequestDto requestDto) {
@@ -39,6 +43,12 @@ public class PaymentController {
 
     @ResponseStatus(HttpStatus.OK)
     @PreAuthorize("hasAnyRole('ROLE_MANAGER', 'ROLE_CUSTOMER')")
+    @UserRoleDescription
+    @Operation(summary = "Search payments.", description = "User can view own payments. "
+            + "Admin can view all payments.")
+    @Parameter(name = "page", description = "page index, default value = 0")
+    @Parameter(name = "size", description = "elements per page, default value = 20")
+    @Parameter(name = "sort", description = "sort criteria", example = "amountToPay,Desc")
     @GetMapping("/search")
     public List<PaymentResponseDto> searchPayments(Authentication authentication,
             PaymentSearchParametersDto searchParameters, Pageable pageable) {
@@ -47,8 +57,9 @@ public class PaymentController {
 
     @ResponseStatus(HttpStatus.OK)
     @PreAuthorize("permitAll()")
-    @Operation(summary = "Stripe redirection endpoint",
-            description = "Mark payment as success, send message to Telegram")
+    @UserRoleDescription
+    @Operation(summary = "Stripe redirection endpoint marks payment as success.",
+            description = "Mark payment as success, send message to Telegram.")
     @GetMapping("/success")
     public PaymentResponseDto processSuccessfulPayment(
             @RequestParam(name = "session_id") String sessionId) {
@@ -57,11 +68,24 @@ public class PaymentController {
 
     @ResponseStatus(HttpStatus.OK)
     @PreAuthorize("permitAll()")
-    @Operation(summary = "Stripe redirection endpoint",
-            description = "Mark payment as canceled, send message to Telegram")
+    @UserRoleDescription
+    @Operation(summary = "Stripe redirection endpoint marks payment as canceled",
+            description = "Marks payment as canceled, send message to Telegram.")
     @GetMapping("/cancel")
     public PaymentResponseDto processCanceledPayment(
             @RequestParam(name = "session_id") String sessionId) {
         return paymentService.processCanceledPayment(sessionId);
+    }
+
+    @ResponseStatus(HttpStatus.OK)
+    @PreAuthorize("hasAnyRole('ROLE_MANAGER', 'ROLE_CUSTOMER')")
+    @UserRoleDescription
+    @Operation(summary = "Renew expired session.",
+            description = "User can renew expired session and get new payment link.")
+    @PostMapping("/renew")
+    public PaymentResponseDto renewPaymentSession(
+            @RequestBody @Valid RenewPaymentRequestDto requestDto,
+            Authentication authentication) {
+        return paymentService.renewPaymentSession(requestDto.paymentId(), authentication.getName());
     }
 }

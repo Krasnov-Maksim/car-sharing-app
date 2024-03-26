@@ -1,0 +1,47 @@
+databaseChangeLog:
+  - changeSet:
+      id: add-2_cars-into-cars-table
+      author: Krasnov-Maksim
+      changes:
+        - insert:
+            tableName: cars
+            columns:
+              - column:
+                  name: model
+                  value: "Q5"
+              - column:
+                  name: brand
+                  value: "Audi"
+              - column:
+                  name: inventory
+                  valueNumeric: 10
+              - column:
+                  name: daily_fee
+                  valueNumeric: 50.50
+              - column:
+                  name: type
+                  value: "SUV"
+              - column:
+                  name: deleted
+                  valueBoolean: false
+        - insert:
+            tableName: cars
+            columns:
+              - column:
+                  name: model
+                  value: "X5"
+              - column:
+                  name: brand
+                  value: "BMW"
+              - column:
+                  name: inventory
+                  valueNumeric: 10
+              - column:
+                  name: daily_fee
+                  valueNumeric: 60.50
+              - column:
+                  name: type
+                  value: "SUV"
+              - column:
+                  name: deleted
+                  valueBoolean: false

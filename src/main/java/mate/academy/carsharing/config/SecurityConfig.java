@@ -37,6 +37,9 @@ public class SecurityConfig {
                         // list cars.
                         .requestMatchers(HttpMethod.GET, "api/cars", "api/cars/{id}")
                         .permitAll()
+                        .requestMatchers(HttpMethod.GET,
+                                "api/payments/cancel", "api/payments/success")
+                        .permitAll()
                         .requestMatchers("api/auth/**", "/swagger-ui/**", "/v3/api-docs/**")
                         .permitAll()
                         .anyRequest()

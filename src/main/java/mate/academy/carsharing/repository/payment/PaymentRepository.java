@@ -1,6 +1,7 @@
 package mate.academy.carsharing.repository.payment;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.Optional;
 import mate.academy.carsharing.model.Payment;
 import mate.academy.carsharing.model.Rental;
@@ -19,4 +20,9 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
     BigDecimal getSumByRentalAndPaymentStatus(Rental rental, Payment.Status paymentStatus);
 
     Optional<Payment> findBySessionId(String sessionId);
+
+    List<Payment> findAllByStatus(Payment.Status status);
+
+    @Query("SELECT p FROM Payment p WHERE p.status = :paymentStatus AND p.rental.user.id = :userId")
+    List<Payment> getAllByUserIdAndPaymentStatus(Long userId, Payment.Status paymentStatus);
 }

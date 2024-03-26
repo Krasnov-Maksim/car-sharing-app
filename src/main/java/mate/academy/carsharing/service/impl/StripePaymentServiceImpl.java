@@ -2,7 +2,6 @@ package mate.academy.carsharing.service.impl;
 
 import com.stripe.exception.StripeException;
 import com.stripe.model.checkout.Session;
-import jakarta.persistence.EntityNotFoundException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.net.MalformedURLException;
@@ -15,6 +14,8 @@ import lombok.RequiredArgsConstructor;
 import mate.academy.carsharing.dto.payment.CreatePaymentRequestDto;
 import mate.academy.carsharing.dto.payment.PaymentResponseDto;
 import mate.academy.carsharing.dto.payment.PaymentSearchParametersDto;
+import mate.academy.carsharing.exception.EntityNotFoundException;
+import mate.academy.carsharing.exception.PaymentException;
 import mate.academy.carsharing.mapper.PaymentMapper;
 import mate.academy.carsharing.model.Payment;
 import mate.academy.carsharing.model.Rental;
@@ -30,6 +31,7 @@ import mate.academy.carsharing.service.PaymentService;
 import mate.academy.carsharing.stripe.StripeSessionProvider;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 @RequiredArgsConstructor
@@ -100,7 +102,7 @@ public class StripePaymentServiceImpl implements PaymentService {
             String message = String.format("Payment with id: %d for the amount: %s successful!",
                     payment.getId(),
                     payment.getAmountToPay().divide(CONVERT_TO_CENT, RoundingMode.HALF_UP));
-            notificationService.sendNotification(payment.getUser().getId(), message);
+            notificationService.sendNotification(payment.getRental().getUser().getId(), message);
         }
         return paymentMapper.toDto(paymentRepository.save(payment));
     }
@@ -109,21 +111,68 @@ public class StripePaymentServiceImpl implements PaymentService {
     public PaymentResponseDto processCanceledPayment(String sessionId) {
         Payment payment = getPaymentBySessionId(sessionId);
         payment.setStatus(Payment.Status.CANCEL);
-        notificationService.sendNotification(payment.getUser().getId(),
+        notificationService.sendNotification(payment.getRental().getUser().getId(),
                 "Payment failure! The payment can be made later within 24 hours!");
         return paymentMapper.toDto(paymentRepository.save(payment));
     }
 
+    @Scheduled(cron = "0 * * * * *")
+    public void checkExpiredStripeSessions() {
+        List<Payment> payments = paymentRepository.findAllByStatus(Payment.Status.PENDING);
+        for (Payment payment : payments) {
+            try {
+                Session session = stripeSessionProvider.retrieveSession(payment.getSessionId());
+                if ("expired".equals(session.getStatus())) {
+                    payment.setStatus(Payment.Status.EXPIRED);
+                    paymentRepository.save(payment);
+                }
+            } catch (StripeException e) {
+                throw new RuntimeException("Can't retrieve session for payment:" + payment, e);
+            }
+        }
+    }
+
+    @Override
+    public PaymentResponseDto renewPaymentSession(Long paymentId, String email) {
+        Payment payment = paymentRepository.findById(paymentId).orElseThrow(
+                () -> new EntityNotFoundException("Can't find payment with id: " + paymentId));
+        Rental rental = payment.getRental();
+        User userByAuthentication = getUserByEmail(email);
+        User userByRental = rental.getUser();
+        Role roleManager = getRoleByName(Role.RoleName.ROLE_MANAGER);
+        if (!userByAuthentication.getRoles().contains(roleManager)) {
+            if (!userByRental.getEmail().equals(email)) {
+                throw new PaymentException("You do not have permission to renew this session");
+            }
+        }
+        if (payment.getStatus().equals(Payment.Status.PAID)) {
+            throw new PaymentException("This payment session cannot be renewed");
+        }
+        if (payment.getStatus().equals(Payment.Status.PENDING)) {
+            throw new PaymentException("No need to renew. The session is active");
+        }
+        try {
+            Session newSession = stripeSessionProvider
+                    .createStripeSession(calculateTotalSum(rental), "Rental repayment");
+            payment.setStatus(Payment.Status.PENDING);
+            payment.setSessionId(newSession.getId());
+            payment.setSessionUrl(new URL(newSession.getUrl()));
+            paymentRepository.save(payment);
+            return paymentMapper.toDto(payment);
+        } catch (StripeException | MalformedURLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     private Payment getPaymentBySessionId(String sessionId) {
-        return paymentRepository.findBySessionId(sessionId)
-                .orElseThrow(() -> new EntityNotFoundException(
-                        "Can't find payment with session id: " + sessionId));
+        return paymentRepository.findBySessionId(sessionId).orElseThrow(
+                () -> new EntityNotFoundException("Can't find payment with session id: "
+                        + sessionId));
     }
 
     private User getUserByEmail(String email) {
         return userRepository.findByEmail(email).orElseThrow(
-                () -> new EntityNotFoundException("Can't find user with email: " + email)
-        );
+                () -> new EntityNotFoundException("Can't find user with email: " + email));
     }
 
     private Role getRoleByName(Role.RoleName roleName) {
@@ -133,10 +182,8 @@ public class StripePaymentServiceImpl implements PaymentService {
     }
 
     private Rental getRentalById(Long rentalId) {
-        return rentalRepository.findById(rentalId)
-                .orElseThrow(
-                        () -> new EntityNotFoundException("Can't find rental with id: " + rentalId)
-                );
+        return rentalRepository.findById(rentalId).orElseThrow(
+                () -> new EntityNotFoundException("Can't find rental with id: " + rentalId));
     }
 
     private Payment createPayment(Rental rental, BigDecimal totalSum) {
@@ -144,7 +191,6 @@ public class StripePaymentServiceImpl implements PaymentService {
         payment.setAmountToPay(totalSum);
         payment.setStatus(Payment.Status.PENDING);
         payment.setRental(rental);
-        payment.setUser(rental.getUser());
         if (rental.getReturnDate().isAfter(LocalDate.now())) {
             payment.setType(Payment.Type.PAYMENT);
             return payment;

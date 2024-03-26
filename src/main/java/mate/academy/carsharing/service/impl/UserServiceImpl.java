@@ -54,8 +54,18 @@ public class UserServiceImpl implements UserService {
     @Override
     public UserResponseDto updateUserInfo(String email, UserUpdateInfoRequestDto requestDto) {
         User user = getUserByEmail(email);
-        user.setFirstName(requestDto.firstName());
-        user.setLastName(requestDto.lastName());
+        String newFirstName = requestDto.firstName();
+        if (newFirstName != null && !newFirstName.isBlank()) {
+            user.setFirstName(newFirstName);
+        }
+        String newLastName = requestDto.lastName();
+        if (newLastName != null && !newLastName.isBlank()) {
+            user.setLastName(newLastName);
+        }
+        String newPassword = requestDto.password();
+        if (newPassword != null && !newPassword.isBlank()) {
+            user.setPassword(passwordEncoder.encode(newPassword));
+        }
         return userMapper.toDto(userRepository.save(user));
     }
 

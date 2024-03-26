@@ -1,0 +1,87 @@
+databaseChangeLog:
+  - changeSet:
+      id: add-manager-and-2_customers-into-users-table
+      comment: Add users and set roles for them. 'ROLE_MANAGER' id=1, 'ROLE_CUSTOMER' id=2
+      author: Krasnov-Maksim
+      changes:
+        - insert:
+            tableName: users
+            columns:
+              - column:
+                  name: email
+                  value: "manager@mail.com"
+              - column:
+                  name: password
+                  value: "$2a$10$OshhtpSVoWVzyAxs2ZNBK.raK8CWFdSM5Q.9emAu71nt8qnMXmrTq"
+              - column:
+                  name: first_name
+                  value: "Manager"
+              - column:
+                  name: last_name
+                  value: "Cool"
+              - column:
+                  name: deleted
+                  valueBoolean: false
+        - insert:
+            tableName: users_roles
+            columns:
+              - column:
+                  name: user_id
+                  valueNumeric: 1
+              - column:
+                  name: role_id
+                  valueNumeric: 1
+        - insert:
+            tableName: users
+            columns:
+              - column:
+                  name: email
+                  value: "john@mail.com"
+              - column:
+                  name: password
+                  value: "$2a$10$r2vN5pGfhiiz2kQJGSDUFe/OGhh99uyNb4bUntg5Di3D1sOtKgjni"
+              - column:
+                  name: first_name
+                  value: "John"
+              - column:
+                  name: last_name
+                  value: "Doe"
+              - column:
+                  name: deleted
+                  valueBoolean: false
+        - insert:
+            tableName: users_roles
+            columns:
+              - column:
+                  name: user_id
+                  valueNumeric: 2
+              - column:
+                  name: role_id
+                  valueNumeric: 2
+        - insert:
+            tableName: users
+            columns:
+              - column:
+                  name: email
+                  value: "tom@mail.com"
+              - column:
+                  name: password
+                  value: "$2a$10$V4nKPAHV.H41QEazjPYad.aOYw1bOdlUBmtvG8SEhygS//0YMOGGq"
+              - column:
+                  name: first_name
+                  value: "Tom"
+              - column:
+                  name: last_name
+                  value: "Foo"
+              - column:
+                  name: deleted
+                  valueBoolean: false
+        - insert:
+            tableName: users_roles
+            columns:
+              - column:
+                  name: user_id
+                  valueNumeric: 3
+              - column:
+                  name: role_id
+                  valueNumeric: 2
