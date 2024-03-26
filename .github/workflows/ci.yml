@@ -21,3 +21,4 @@ jobs:
           TELEGRAM_BOT_USERNAME: ${{ secrets.TELEGRAM_BOT_USERNAME}}
         # run: mvn --batch-mode --update-snapshots verify
           run: echo $TELEGRAM_BOT_USERNAME !!!!!
+
