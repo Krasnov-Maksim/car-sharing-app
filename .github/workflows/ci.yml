@@ -17,8 +17,8 @@ jobs:
       - name: Build with Maven
         env:
           STRIPE_APY_KEY: ${{ secrets.STRIPE_APY_KEY }}
+          STRIPE_CANCEL_LINK:  ${{ vars.STRIPE_CANCEL_LINK }}
+          STRIPE_SUCCESS_LINK:  ${{ vars.STRIPE_SUCCESS_LINK }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_BOT_USERNAME: ${{ secrets.TELEGRAM_BOT_USERNAME}}
-        # run: mvn --batch-mode --update-snapshots verify
-          run: echo $TELEGRAM_BOT_USERNAME !!!!!
-
+        run: mvn --batch-mode --update-snapshots verify
